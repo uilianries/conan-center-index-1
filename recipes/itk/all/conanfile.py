@@ -37,6 +37,8 @@ class LibITKConan(ConanFile):
     _source_subfolder = "sf"
     build_subfolder = "build"
     short_paths = True
+    upstream_version= ""
+    upstream_patch= ""
 
     def configure(self):
         tools.get(**self.conan_data["sources"][self.version])
