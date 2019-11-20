@@ -2,53 +2,47 @@ import os
 
 from conans import ConanFile, CMake, tools
 
+
 class LibITKConan(ConanFile):
     name = "itk"
-
-    generators = "cmake", "cmake_find_package"
+    homepage = "http://www.itk.org/"
+    url = "https://github.com/conan-io/conan-center-index"
+    license = "Apache-2.0"
+    description = "Insight Segmentation and Registration Toolkit"
     exports_sources = ["CMakeLists.txt"]
-
     settings = "os", "arch", "compiler", "build_type"
-
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
-        "use_jpegturbo": [True, False],
-        "use_vtk": [True, False],
-        "use_fftw_float": [True, False],
-        "use_fftw_double": [True, False],
-        "use_opencv": [True, False],
-        "use_mkl": [True, False]}
-
+        "use_jpegturbo": [True, False]}
     default_options = {
-        "shared": True,
+        "shared": False,
         "fPIC": True,
-        "use_vtk": False,
-        "use_jpegturbo": False,
-        "use_fftw_float": False,
-        "use_fftw_double": False,
-        "use_opencv": False,
-        "use_mkl": False}
-
-    homepage = "http://www.itk.org/"
-    url = "https://github.com/conan-io/conan-center-index"
-    license = "http://www.itk.org/licensing/"
-    description = "Insight Segmentation and Registration Toolkit"
-    _source_subfolder = "sf"
-    build_subfolder = "build"
+        "use_jpegturbo": False}
+    generators = "cmake", "cmake_find_package"
     short_paths = True
-    upstream_version= ""
-    upstream_patch= ""
+    _source_subfolder = "sf"
+    _build_subfolder = "build"
+    _upstream_version= ""
+    _upstream_patch= ""
+
+    # TODO: Some packages can be added as optional, but they are not in CCI:
+    # - mkl
+    # - fftw
+    # - vtk
+    # - opencv
+
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
 
     def configure(self):
         tools.get(**self.conan_data["sources"][self.version])
         version_token = self.version.split(".")
-        self.upstream_version = "{0}.{1}".format(version_token[0], version_token[1])
-        self.upstream_patch = version_token[2]
+        self._upstream_version = "{0}.{1}".format(version_token[0], version_token[1])
+        self._upstream_patch = version_token[2]
         del self.settings.compiler.libcxx
         del self.settings.compiler.cppstd
-        if 'CI' not in os.environ:
-            os.environ["CONAN_SYSREQUIRES_MODE"] = "verify"
 
     def requirements(self):
 
@@ -62,33 +56,11 @@ class LibITKConan(ConanFile):
         self.requires("libpng/1.6.37")
         self.requires("zlib/1.2.11")
 
-        if(self.options["use_opencv"]):
-            self.requires("opencv/4.1.1")
-
-        if(self.options["use_vtk"]):
-            self.options["use_vtk"] = False
-            self.output.warn("VTK is not yet package in Conan center, discard dependency")
-        #    self.requires("mkl/x.y.z")
-
-        if(self.options["use_mkl"]):
-            self.options["use_mkl"] = False
-            self.output.warn("Intel(c)'s MKL(c) is not yet package in Conan center, discard dependency")
-        #    self.requires("mkl/x.y.z")
-
-        if(self.options["use_fftw_double"] and self.options["use_fftw_float"]):
-            self.output.error("Please choose between double and float conversion for FFT library")
-
-        if(self.options["use_fftw_double"] or self.options["use_fftw_float"]):
-            self.options["use_fftw_double"] = False
-            self.options["use_fftw_float"] = False
-            self.output.warn("FFTW library is not yet package in Conan center, discard dependency")
-        #    self.requires("fftw/x.y.z")
-
     def source(self):
         tools.get(**self.conan_data["sources"][self.version])
         os.rename("ITK-{0}.{1}".format(
-            self.upstream_version,
-            self.upstream_patch),
+            self._upstream_version,
+            self._upstream_patch),
             self._source_subfolder)
 
     def build(self):
@@ -113,10 +85,7 @@ class LibITKConan(ConanFile):
         cmake.definitions["Module_ITKIOMINC"] = "OFF"
         cmake.definitions["Module_ITKV3Compatibility"] = "OFF"
 
-        if(self.options["use_opencv"]):
-            cmake.definitions["Module_ITKVideoBridgeOpenCV"] = "ON"
-        else:
-            cmake.definitions["Module_ITKVideoBridgeOpenCV"] = "OFF"
+        cmake.definitions["Module_ITKVideoBridgeOpenCV"] = "OFF"
 
         cmake.definitions["Module_ITKDCMTK"] = "ON"
         cmake.definitions["Module_ITKIODCMTK"] = "ON"
@@ -204,18 +173,11 @@ class LibITKConan(ConanFile):
         cmake.definitions["Module_ITKWatersheds"] = "ON"
         cmake.definitions["Module_ITKDICOMParser"] = "ON"
 
-        if(self.options["use_vtk"]):
-            cmake.definitions["Module_ITKVTK"] = "ON"
-            cmake.definitions["Module_ITKVtkGlue"] = "ON"
-        else:
-            cmake.definitions["Module_ITKVTK"] = "OFF"
-            cmake.definitions["Module_ITKVtkGlue"] = "OFF"
+        cmake.definitions["Module_ITKVTK"] = "OFF"
+        cmake.definitions["Module_ITKVtkGlue"] = "OFF"
 
-        if(self.options["use_fftw_float"]):
-            cmake.definitions["USE_FFTWF"] = "ON"
-
-        if(self.options["use_fftw_double"]):
-            cmake.definitions["USE_FFTWD"] = "ON"
+        cmake.definitions["USE_FFTWF"] = "OFF"
+        cmake.definitions["USE_FFTWD"] = "OFF"
 
         # Disabled on Linux (link errors)
         cmake.definitions["Module_ITKLevelSetsv4Visualization"] = "OFF"
@@ -223,7 +185,7 @@ class LibITKConan(ConanFile):
         # Disabled because Vxl vidl is not build anymore
         cmake.definitions["Module_ITKVideoBridgeVXL"] = "OFF"
 
-        cmake.configure(build_folder=self.build_subfolder)
+        cmake.configure(build_folder=self._build_subfolder)
         cmake.build()
 
     def package(self):
@@ -234,7 +196,7 @@ class LibITKConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.builddirs = ['lib/cmake/ITK-{0}/'.format(
-            self.upstream_version)]
+            self._upstream_version)]
         self.cpp_info.libs = tools.collect_libs(self)
         self.cpp_info.includedirs = ['include']
         # This hack allow to include directly, for example, a vnl
@@ -244,5 +206,5 @@ class LibITKConan(ConanFile):
         # available. More, one has to add in CMakeLists.txt
         # include_directories(${CONAN_INCLUDE_DIRS_ITK_SUB})
         # to finish the use of this hack.
-        self.cpp_info.sub.includedirs = ['include/ITK-{0}'.format(
-            self.upstream_version)]
+        self.cpp_info.sub.includedirs.append('include/ITK-{0}'.format(
+            self._upstream_version))
