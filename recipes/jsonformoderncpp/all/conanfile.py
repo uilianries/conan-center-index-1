@@ -2,11 +2,11 @@ from conans import ConanFile, tools, CMake
 import os
 
 
-class NlohmannJsonConan(ConanFile):
-    name = "nlohmann_json"
+class JsonformoderncppConan(ConanFile):
+    name = "jsonformoderncpp"
     homepage = "https://github.com/nlohmann/json"
     description = "JSON for Modern C++ parser and generator."
-    topics = ("conan", "jsonformoderncpp", "nlohmann_json", "json", "header-only")
+    topics = ("conan", "jsonformoderncpp", "json", "header-only")
     url = "https://github.com/conan-io/conan-center-index"
     settings = "os", "compiler", "arch", "build_type"
     no_copy_source = True
