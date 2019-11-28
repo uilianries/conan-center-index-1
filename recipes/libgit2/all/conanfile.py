@@ -115,22 +115,13 @@ class LibGit2Conan(ConanFile):
             cmake.definitions["STATIC_CRT"] = "MT" in str(self.settings.compiler.runtime)
 
         cmake.configure()
-        
+
         return cmake
 
     def _patch_sources(self):
         tools.replace_in_file(os.path.join(self._source_subfolder, "src", "CMakeLists.txt"),
                               "FIND_PKGLIBRARIES(LIBSSH2 libssh2)",
-                              "FIND_PACKAGE(libssh2 REQUIRED)\n"
-                              "\tSET(LIBSSH2_FOUND ON)\n"
-                              "\tSET(LIBSSH2_INCLUDE_DIRS ${libssh2_INCLUDE_DIRS})\n"
-                              "\tSET(LIBSSH2_LIBRARIES ${libssh2_LIBRARIES})\n"
-                              "\tSET(LIBSSH2_LIBRARY_DIRS ${libssh2_LIB_DIRS})")
-        tools.save("FindOpenSSL.cmake",
-                   "set(OPENSSL_FOUND ${OpenSSL_FOUND})\n"
-                   "set(OPENSSL_INCLUDE_DIR ${OpenSSL_INCLUDE_DIRS})\n"
-                   "set(OPENSSL_LIBRARIES ${OpenSSL_LIBRARIES})\n",
-                   append=True)
+                              "FIND_PACKAGE(libssh2 REQUIRED)")
 
     def build(self):
         self._patch_sources()
