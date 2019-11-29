@@ -1,0 +1,4 @@
+sources:
+  "6.4.6":
+    sha256: 540BBF9369A31E0891FCB4056A36FFA439C59FC179AA0B1F46E3478417F97643
+    url: https://github.com/facebook/rocksdb/archive/v6.4.6.tar.gz
