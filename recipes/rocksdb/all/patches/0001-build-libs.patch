@@ -1,0 +1,60 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7266f3b..b8f6397 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -772,6 +772,7 @@ else()
+   set(SYSTEM_LIBS ${CMAKE_THREAD_LIBS_INIT})
+   set(LIBS ${ROCKSDB_SHARED_LIB} ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
+ 
++  if (BUILD_SHARED_LIBS)
+   add_library(${ROCKSDB_SHARED_LIB} SHARED ${SOURCES})
+   target_link_libraries(${ROCKSDB_SHARED_LIB}
+     ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
+@@ -781,18 +782,23 @@ else()
+                         SOVERSION ${ROCKSDB_VERSION_MAJOR}
+                         CXX_STANDARD 11
+                         OUTPUT_NAME "rocksdb")
++  endif()
+ endif()
+ 
++if (NOT BUILD_SHARED_LIBS)
+ add_library(${ROCKSDB_STATIC_LIB} STATIC ${SOURCES})
+ target_link_libraries(${ROCKSDB_STATIC_LIB}
+   ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
++endif()
+ 
+ if(WIN32)
++  if (BUILD_SHARED_LIBS)
+   add_library(${ROCKSDB_IMPORT_LIB} SHARED ${SOURCES})
+   target_link_libraries(${ROCKSDB_IMPORT_LIB}
+     ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
+   set_target_properties(${ROCKSDB_IMPORT_LIB} PROPERTIES
+     COMPILE_DEFINITIONS "ROCKSDB_DLL;ROCKSDB_LIBRARY_EXPORTS")
++  endif()
+   if(MSVC)
+     set_target_properties(${ROCKSDB_STATIC_LIB} PROPERTIES
+       COMPILE_FLAGS "/Fd${CMAKE_CFG_INTDIR}/${ROCKSDB_STATIC_LIB}.pdb")
+@@ -839,6 +845,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
+ 
+   install(DIRECTORY include/rocksdb COMPONENT devel DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+ 
++  if (NOT BUILD_SHARED_LIBS)
+   install(
+     TARGETS ${ROCKSDB_STATIC_LIB}
+     EXPORT RocksDBTargets
+@@ -846,6 +853,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
+     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+   )
++  else()
+ 
+   install(
+     TARGETS ${ROCKSDB_SHARED_LIB}
+@@ -856,6 +864,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
+     LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+   )
++  endif()
+ 
+   install(
+     EXPORT RocksDBTargets
