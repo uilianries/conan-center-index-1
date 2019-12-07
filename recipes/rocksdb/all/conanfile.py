@@ -14,6 +14,7 @@ class RocksDB(ConanFile):
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
+        "lite": [True, False],
         "with_gflags": [True, False],
         "with_snappy": [True, False],
         "with_lz4": [True, False],
@@ -23,13 +24,15 @@ class RocksDB(ConanFile):
     default_options = {
         "shared": False,
         "fPIC": False,
+        "lite": False,
         "with_snappy": False,
         "with_lz4": False,
         "with_zlib": False,
         "with_zstd": False,
         "with_gflags": False
     }
-    generators = ["cmake", "cmake_find_package", "cmake_paths"]
+    exports_sources = ["CMakeLists.txt", "patches/*"]
+    generators = ["cmake"]
 
     @property
     def _source_subfolder(self):
@@ -46,7 +49,11 @@ class RocksDB(ConanFile):
 
     def _configure_cmake(self):
         cmake = CMake(self)
+        cmake.definitions["WITH_MD_LIBRARY"] = self.settings.compiler == "Visual Studio" and "MD" in self.settings.compiler.runtime
+        cmake.definitions["ROCKSDB_INSTALL_ON_WINDOWS"] = self.settings.os == "Windows"
+        cmake.definitions["ROCKSDB_LITE"] = self.options.lite
         cmake.definitions["WITH_TESTS"] = False
+        cmake.definitions["WITH_TOOLS"] = False
         cmake.definitions["WITH_GFLAGS"] = self.options.with_gflags
         cmake.definitions["WITH_SNAPPY"] = self.options.with_snappy
         cmake.definitions["WITH_LZ4"] = self.options.with_lz4
@@ -54,10 +61,12 @@ class RocksDB(ConanFile):
         cmake.definitions["WITH_ZSTD"] = self.options.with_zstd
         # not available yet in CCI
         cmake.definitions["WITH_JEMALLOC"] = False
-        cmake.configure(source_folder=self._source_subfolder)
+        cmake.configure()
         return cmake
 
     def build(self):
+        for patch in self.conan_data["patches"][self.version]:
+            tools.patch(**patch)
         cmake = self._configure_cmake()
         cmake.build()
 
@@ -74,8 +83,8 @@ class RocksDB(ConanFile):
             self.requires("zstd/1.3.8")
 
     def package(self):
-        self.copy(pattern="LICENSE*", dst="licenses",
-                  src=self._source_subfolder)
+        self.copy("COPYING", dst="licenses", src=self._source_subfolder)
+        self.copy("LICENSE*", dst="licenses", src=self._source_subfolder)
         cmake = self._configure_cmake()
         cmake.install()
         tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
@@ -83,3 +92,11 @@ class RocksDB(ConanFile):
     def package_info(self):
         self.cpp_info.name = "RocksDB"
         self.cpp_info.libs = tools.collect_libs(self)
+        if self.settings.os == "Windows":
+            self.cpp_info.system_libs = ["Shlwapi.lib", "Rpcrt4.lib"]
+            if self.options.shared:
+                self.cpp_info.defines = ["ROCKSDB_DLL", "ROCKSDB_LIBRARY_EXPORTS"]
+        elif self.settings.os == "Linux":
+            self.cpp_info.system_libs = ["pthread", "m"]
+        if self.options.lite:
+            self.cpp_info.defines.append("ROCKSDB_LITE")
