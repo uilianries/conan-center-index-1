@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 7266f3b..b8f6397 100644
+index 7266f3b55..afc630414 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -772,6 +772,7 @@ else()
@@ -10,7 +10,7 @@ index 7266f3b..b8f6397 100644
    add_library(${ROCKSDB_SHARED_LIB} SHARED ${SOURCES})
    target_link_libraries(${ROCKSDB_SHARED_LIB}
      ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
-@@ -781,18 +782,23 @@ else()
+@@ -781,23 +782,30 @@ else()
                          SOVERSION ${ROCKSDB_VERSION_MAJOR}
                          CXX_STANDARD 11
                          OUTPUT_NAME "rocksdb")
@@ -34,7 +34,14 @@ index 7266f3b..b8f6397 100644
    if(MSVC)
      set_target_properties(${ROCKSDB_STATIC_LIB} PROPERTIES
        COMPILE_FLAGS "/Fd${CMAKE_CFG_INTDIR}/${ROCKSDB_STATIC_LIB}.pdb")
-@@ -839,6 +845,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
++    if (BUILD_SHARED_LIBS)
+     set_target_properties(${ROCKSDB_IMPORT_LIB} PROPERTIES
+       COMPILE_FLAGS "/Fd${CMAKE_CFG_INTDIR}/${ROCKSDB_IMPORT_LIB}.pdb")
++    endif()
+   endif()
+ endif()
+ 
+@@ -839,6 +847,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
  
    install(DIRECTORY include/rocksdb COMPONENT devel DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
  
@@ -42,7 +49,7 @@ index 7266f3b..b8f6397 100644
    install(
      TARGETS ${ROCKSDB_STATIC_LIB}
      EXPORT RocksDBTargets
-@@ -846,6 +853,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
+@@ -846,6 +855,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
      ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
    )
@@ -50,7 +57,7 @@ index 7266f3b..b8f6397 100644
  
    install(
      TARGETS ${ROCKSDB_SHARED_LIB}
-@@ -856,6 +864,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
+@@ -856,6 +866,7 @@ if(NOT WIN32 OR ROCKSDB_INSTALL_ON_WINDOWS)
      LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
    )
