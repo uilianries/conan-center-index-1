@@ -45,6 +45,8 @@ class FreetypeConan(ConanFile):
             del self.options.fPIC
 
     def configure(self):
+        if self.options.shared:
+            self.options["*"].shared = True
         del self.settings.compiler.libcxx
         del self.settings.compiler.cppstd
 
@@ -102,6 +104,9 @@ conan_staticlibs="{staticlibs}"
         self.copy("LICENSE.TXT", dst="licenses", src=os.path.join(self._source_subfolder, "docs"))
         tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
+
+    def package_id(self):
+        self.info.shared_library_package_id()
 
     @staticmethod
     def _chmod_plus_x(filename):
