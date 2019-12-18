@@ -108,6 +108,10 @@ class BoostConan(ConanFile):
         exe = self.options.python_executable if self.options.python_executable else sys.executable
         return str(exe).replace('\\', '/')
 
+    def configure(self):
+        if self.options.shared:
+            self.options["*"].shared = True
+
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
@@ -826,6 +830,9 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dylib*", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.lib", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.dll", dst="bin", src=out_lib_dir, keep_path=False)
+
+    def package_id(self):
+        self.info.shared_library_package_id()
 
     def package_info(self):
         gen_libs = [] if self.options.header_only else tools.collect_libs(self)
