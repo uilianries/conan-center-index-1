@@ -41,6 +41,8 @@ class LibGit2Conan(ConanFile):
             del self.options.with_iconv
 
     def configure(self):
+        if self.options.shared:
+            self.options["*"].shared = True
         del self.settings.compiler.cppstd
         del self.settings.compiler.libcxx
 
@@ -144,6 +146,9 @@ class LibGit2Conan(ConanFile):
         cmake.install()
 
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
+
+    def package_id(self):
+        self.info.shared_library_package_id()
 
     def package_info(self):
         self.cpp_info.libs = ["git2"]
