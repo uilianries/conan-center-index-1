@@ -19,7 +19,8 @@ class RocksDB(ConanFile):
         "with_snappy": [True, False],
         "with_lz4": [True, False],
         "with_zlib": [True, False],
-        "with_zstd": [True, False]
+        "with_zstd": [True, False],
+        "with_tbb": [True, False]
     }
     default_options = {
         "shared": False,
@@ -29,7 +30,8 @@ class RocksDB(ConanFile):
         "with_lz4": False,
         "with_zlib": False,
         "with_zstd": False,
-        "with_gflags": False
+        "with_gflags": False,
+        "with_tbb": False
     }
     exports_sources = ["CMakeLists.txt", "patches/*"]
     generators = ["cmake"]
@@ -37,6 +39,10 @@ class RocksDB(ConanFile):
     @property
     def _source_subfolder(self):
         return "source_subfolder"
+
+    @property
+    def _build_subfolder(self):
+        return "build_subfolder"
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -59,9 +65,12 @@ class RocksDB(ConanFile):
         cmake.definitions["WITH_LZ4"] = self.options.with_lz4
         cmake.definitions["WITH_ZLIB"] = self.options.with_zlib
         cmake.definitions["WITH_ZSTD"] = self.options.with_zstd
+        cmake.definitions["WITH_TBB"] = self.options.with_tbb
         # not available yet in CCI
         cmake.definitions["WITH_JEMALLOC"] = False
-        cmake.configure()
+        cmake.definitions["WITH_NUMA"] = False
+
+        cmake.configure(build_folder=self._build_subfolder)
         return cmake
 
     def build(self):
@@ -81,6 +90,8 @@ class RocksDB(ConanFile):
             self.requires("zlib/1.2.11")
         if self.options.with_zstd:
             self.requires("zstd/1.3.8")
+        if self.options.with_tbb:
+            self.requires("tbb/2019_u9")
 
     def package(self):
         self.copy("COPYING", dst="licenses", src=self._source_subfolder)
