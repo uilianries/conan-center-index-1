@@ -91,6 +91,8 @@ class PocoConan(ConanFile):
             del self.options.fPIC
 
     def configure(self):
+        if self.options.shared:
+            self.options["*"].shared = True
         if self.options.enable_apacheconnector:
             raise ConanInvalidConfiguration("Apache connector not supported: https://github.com/pocoproject/poco/issues/1764")
         if self.options.enable_data_mysql:
@@ -145,6 +147,9 @@ class PocoConan(ConanFile):
         cmake = self._configure_cmake()
         cmake.install()
         tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
+
+    def package_id(self):
+        self.info.shared_library_package_id()
 
     def package_info(self):
         libs = [("enable_mongodb", "PocoMongoDB"),
