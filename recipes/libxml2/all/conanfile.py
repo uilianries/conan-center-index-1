@@ -56,6 +56,8 @@ class Libxml2Conan(ConanFile):
             del self.options.fPIC
 
     def configure(self):
+        if self.options.shared:
+            self.options["*"].shared = True
         del self.settings.compiler.libcxx
         del self.settings.compiler.cppstd
 
@@ -191,6 +193,9 @@ class Libxml2Conan(ConanFile):
         tools.rmdir(os.path.join(self.package_folder, 'share'))
         tools.rmdir(os.path.join(self.package_folder, 'lib', 'cmake'))
         tools.rmdir(os.path.join(self.package_folder, 'lib', 'pkgconfig'))
+
+    def package_id(self):
+        self.info.shared_library_package_id()
 
     def package_info(self):
         if self._is_msvc:
