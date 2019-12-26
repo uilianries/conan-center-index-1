@@ -24,7 +24,7 @@ class RocksDB(ConanFile):
     }
     default_options = {
         "shared": False,
-        "fPIC": False,
+        "fPIC": True,
         "lite": False,
         "with_snappy": False,
         "with_lz4": False,
