@@ -2,19 +2,6 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 336a68d..3b9f8dd 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -19,12 +19,6 @@ if("${LZFSE_BUNDLE_MODE}" STREQUAL "")
- endif()
- mark_as_advanced(LZFSE_BUNDLE_MODE)
- 
--if(NOT LZFSE_BUNDLE_MODE)
--  option(BUILD_SHARED_LIBS "Build shared libraries" ON)
--else()
--  set(BUILD_SHARED_LIBS OFF)
--endif()
--
- if (CMAKE_VERSION VERSION_GREATER 3.2)
-   cmake_policy (SET CMP0063 NEW)
- endif ()
 @@ -82,7 +76,6 @@ else()
  endif()
  
