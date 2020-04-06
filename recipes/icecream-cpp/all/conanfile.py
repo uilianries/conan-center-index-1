@@ -10,10 +10,12 @@ class IcecreamcppConan(ConanFile):
     description = "A little library to help with the print debugging on C++11 and forward."
     topics = ("debug", "single-header-lib", "print")
     no_copy_source = True
+    _source_subfolder = "source_subfolder"
 
     def source(self):
         tools.get(**self.conan_data["sources"][self.version])
-        os.rename('icecream-cpp-{}'.format(self.version), 'icecream-cpp-src')
+        os.rename('icecream-cpp-{}'.format(self.version), self._source_subfolder)
 
     def package(self):
-        self.copy('icecream-cpp-src/icecream.hpp', 'include/', keep_path=False)
+        self.copy('LICENSE.txt', dst='license', src=self._source_subfolder)
+        self.copy('icecream.hpp', dst='include', src=self._source_subfolder)
