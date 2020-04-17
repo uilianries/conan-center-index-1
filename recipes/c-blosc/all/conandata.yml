@@ -15,3 +15,6 @@ patches:
   "1.17.1":
     - patch_file: "patches/cmake-dependencies_and_cxx_linker.patch"
       base_path: "source_subfolder"
+  "1.5.4":
+    - patch_file: "patches/modify-1.5.4-CMakeLists-for-conan.patch"
+      base_path: "source_subfolder"
