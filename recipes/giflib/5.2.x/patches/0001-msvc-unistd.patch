@@ -1,11 +1,11 @@
-diff --git a/giflib-5.2.1/gif_font.c b/source_subfolder/gif_font.c
+diff --git a/gif_font.c b/gif_font.c
 index d90783c..0fd20ed 100644
---- a/giflib-5.2.1/gif_font.c
-+++ b/source_subfolder/gif_font.c
+--- a/gif_font.c
++++ b/gif_font.c
 @@ -11,6 +11,10 @@ SPDX-License-Identifier: MIT
- 
+
  #include "gif_lib.h"
- 
+
 +#ifdef _MSC_VER
 +# define strtok_r strtok_s
 +#endif
@@ -13,19 +13,19 @@ index d90783c..0fd20ed 100644
  /*****************************************************************************
   Ascii 8 by 8 regular font - only first 128 characters are supported.
  *****************************************************************************/
-diff --git a/giflib-5.2.1/gif_hash.h b/source_subfolder/gif_hash.h
+diff --git a/gif_hash.h b/gif_hash.h
 index 6a1b585..6311cd1 100644
---- a/giflib-5.2.1/gif_hash.h
-+++ b/source_subfolder/gif_hash.h
+--- a/gif_hash.h
++++ b/gif_hash.h
 @@ -9,7 +9,11 @@ SPDX-License-Identifier: MIT
  #ifndef _GIF_HASH_H_
  #define _GIF_HASH_H_
- 
+
 +#ifdef _WIN32
 +#else
  #include <unistd.h>
 +#endif
 +
  #include <stdint.h>
- 
+
  #define HT_SIZE			8192	   /* 12bits = 4096 or twice as big! */

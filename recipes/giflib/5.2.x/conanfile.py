@@ -1,5 +1,4 @@
 from conans import CMake, ConanFile, tools
-from conans.errors import ConanInvalidConfiguration
 import os
 
 class GiflibConan(ConanFile):
@@ -11,12 +10,16 @@ class GiflibConan(ConanFile):
     topics = ("conan", "giflib", "image", "multimedia", "format", "graphics")
     settings = "os", "arch", "compiler", "build_type"
     exports_sources = ["CMakeLists.txt", "patches/*"]
-
+    generators = "cmake"
     _cmake = None
 
     @property
     def _source_subfolder(self):
         return "source_subfolder"
+
+    @property
+    def _build_subfolder(self):
+        return "build_subfolder"
 
     def configure(self):
         del self.settings.compiler.libcxx
@@ -25,18 +28,20 @@ class GiflibConan(ConanFile):
     def source(self):
         tools.get(**self.conan_data["sources"][self.version])
         os.rename("%s-%s" % (self.name, self.version), self._source_subfolder)
-        tools.patch(base_path=self._source_subfolder, patch_file="patches/%s.patch" % self.version, strip=1)
 
     def _configure_cmake(self):
         if self._cmake:
             return self._cmake
-
         self._cmake = CMake(self)
-
-        self._cmake.configure()
+        self._cmake.configure(build_folder=self._build_subfolder)
         return self._cmake
-    
+
+    def _patch_sources(self):
+        for patch in self.conan_data.get("patches", {}).get(self.version, []):
+            tools.patch(**patch)
+
     def build(self):
+        self._patch_sources()
         cmake = self._configure_cmake()
         cmake.build()
 
@@ -45,6 +50,6 @@ class GiflibConan(ConanFile):
         cmake.install()
 
         self.copy("COPYING", src=self._source_subfolder, dst="licenses")
-    
+
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
