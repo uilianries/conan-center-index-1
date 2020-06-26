@@ -10,8 +10,6 @@ class GiflibConan(ConanFile):
     homepage = "http://giflib.sourceforge.net"
     topics = ("conan", "giflib", "image", "multimedia", "format", "graphics")
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
     exports_sources = ["CMakeLists.txt", "patches/*"]
 
     _cmake = None
@@ -19,10 +17,6 @@ class GiflibConan(ConanFile):
     @property
     def _source_subfolder(self):
         return "source_subfolder"
-
-    def config_options(self):
-        if self.settings.os == "Windows":
-            del self.options.fPIC
 
     def configure(self):
         del self.settings.compiler.libcxx
@@ -54,7 +48,3 @@ class GiflibConan(ConanFile):
     
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
-
-        if not self.options.shared:
-            self.cpp_info.defines.append("USE_GIF_LIB")
-
