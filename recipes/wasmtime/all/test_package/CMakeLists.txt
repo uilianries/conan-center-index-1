@@ -7,4 +7,4 @@ conan_basic_setup(TARGETS)
 find_package(wasmtime REQUIRED CONFIG)
 
 add_executable(example example.c)
-target_link_libraries(example PRIVATE wasmtime::wasmtime)
+target_link_libraries(example wasmtime::wasmtime)

@@ -71,7 +71,7 @@ class WasmtimeConan(ConanFile):
                 tools.rename(os.path.join(self.package_folder, "lib", "wasmtime.dll.lib"),
                              os.path.join(self.package_folder, "lib", "wasmtime.lib"))
         else:
-            self.copy('*.lib', dst='lib', keep_path=False)
+            self.copy('*.lib', dst='lib', excludes="*.dll.lib", keep_path=False)
             self.copy('*.a', dst='lib', keep_path=False)
 
         self.copy('LICENSE', dst='licenses', src=self._source_subfolder)
@@ -82,8 +82,10 @@ class WasmtimeConan(ConanFile):
     def package_info(self):
         self.cpp_info.libs = ["wasmtime"]
         if self.settings.os == "Windows":
-            if self.options.shared:
-                self.cpp_info.defines.extend(["WASM_API_EXTERN", "WASI_API_EXTERN"])
+            if not self.options.shared:
+                # FIXME: Tricky way to pass definions. cpp_info.define does not work.
+                self.cpp_info.cflags = ["-DWASM_API_EXTERN=", "-DWASI_API_EXTERN="]
+                self.cpp_info.cxxflags = ["-DWASM_API_EXTERN=", "-DWASI_API_EXTERN="]
             self.cpp_info.system_libs = ['ws2_32', 'bcrypt', 'advapi32', 'userenv', 'ntdll', 'shell32', 'ole32']
         elif self.settings.os == 'Linux':
             self.cpp_info.system_libs = ['pthread', 'dl', 'm']
