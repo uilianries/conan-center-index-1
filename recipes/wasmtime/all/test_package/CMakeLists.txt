@@ -1,13 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
-project(PackageTest)
-
-set(C_STANDARD 11)
+project(PackageTest C)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+conan_basic_setup(TARGETS)
 
-find_package(wasmtime REQUIRED)
+find_package(wasmtime REQUIRED CONFIG)
 
 add_executable(example example.c)
 target_link_libraries(example PRIVATE wasmtime::wasmtime)
-target_compile_options(example PRIVATE ${CONAN_COMPILE_DEFINITIONS_WASMTIME})
