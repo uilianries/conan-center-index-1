@@ -3,7 +3,7 @@ from conans import ConanFile, tools
 from conans.errors import ConanInvalidConfiguration
 
 
-required_conan_version = ">=1.33.0"
+required_conan_version = ">=1.43.0"
 
 
 class TaoCPPJSONConan(ConanFile):
@@ -71,5 +71,8 @@ class TaoCPPJSONConan(ConanFile):
         self.cpp_info.names["cmake_find_package_multi"] = "taocpp"
         self.cpp_info.components["json"].names["cmake_find_package"] = "json"
         self.cpp_info.components["json"].names["cmake_find_package_multi"] = "json"
+        self.cpp_info.set_property("cmake_target_name", "taocpp-json")
+        self.cpp_info.set_property("cmake_module_target_name", "taocpp::json")
+        self.cpp_info.set_property("cmake_find_mode", "both")
         if self._requires_pegtl:
             self.cpp_info.components["json"].requires = ["taocpp-pegtl::taocpp-pegtl"]
