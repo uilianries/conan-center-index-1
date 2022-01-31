@@ -13,7 +13,7 @@ LINUX_PROFILE = """\
     compiler.version=10
     build_type=Release
     [options]
-    [build_requires]
+    [tool_requires]
     [env]
     """.stripIndent()
 
@@ -26,7 +26,7 @@ MACOS_PROFILE = """\
     compiler.version=12.0
     build_type=Release
     [options]
-    [build_requires]
+    [tool_requires]
     [env]
     """.stripIndent()
 
@@ -39,7 +39,7 @@ WINDOWS_PROFILE = """\
     compiler.version=15
     build_type=Release
     [options]
-    [build_requires]
+    [tool_requires]
     [env]
     """.stripIndent()
 
