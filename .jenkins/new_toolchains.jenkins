@@ -147,7 +147,7 @@ node('Linux') {
                 toBuild.add([
                     folder: "recipes/${recipe}/${props.folder}/conanfile.py",
                     reference: "${recipe}/${version}",
-                    name: "${name}",
+                    name: "${recipe}",
                     version: "${version}"
                 ])
             }
