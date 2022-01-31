@@ -34,7 +34,7 @@ class ZlibConan(ConanFile):
         # self.folders.source = "source_subfolder"
 
     def export_sources(self):
-        for _patch in self.conan_data.get("patches", {}).get(self.version, []):
+        for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
             self.copy(_patch["patch_file"])
 
     def config_options(self):
@@ -48,10 +48,10 @@ class ZlibConan(ConanFile):
         del self.settings.compiler.cppstd
 
     def source(self):
-        get(self, **self.conan_data["sources"][self.version], destination=self.source_folder, strip_root=True)
+        get(self, **self.conan_data["sources"][str(self.version)], destination=self.source_folder, strip_root=True)
 
     def _patch_sources(self):
-        for _patch in self.conan_data.get("patches", {}).get(self.version, []):
+        for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
             # !!!! This is not easy to understand, the patches are un the base source folder, not an easy access. Here the current dir is source_folder.
             patch(self, patch_file=os.path.join(self.folders.base_source, _patch["patch_file"]))
 
