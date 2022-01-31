@@ -148,7 +148,7 @@ node('Linux') {
                     folder: "recipes/${recipe}/${props.folder}/conanfile.py",
                     reference: "${recipe}/${version}",
                     name: "${name}",
-                    version "${version}"
+                    version: "${version}"
                 ])
             }
         }
