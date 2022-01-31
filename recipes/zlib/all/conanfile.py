@@ -89,15 +89,15 @@ class ZlibConan(ConanFile):
             if self.options.shared:
                 if self.settings.compiler == "Visual Studio" and suffix:
                     current_lib = os.path.join(lib_path, "zlib%s.lib" % suffix)
-                    rename(current_lib, os.path.join(lib_path, "zlib.lib"))
+                    rename(self, current_lib, os.path.join(lib_path, "zlib.lib"))
             else:
                 if self.settings.compiler == "Visual Studio":
                     current_lib = os.path.join(lib_path, "zlibstatic%s.lib" % suffix)
-                    rename(current_lib, os.path.join(lib_path, "zlib.lib"))
+                    rename(self, current_lib, os.path.join(lib_path, "zlib.lib"))
                 elif self.settings.compiler in ("clang", "gcc", ):
                     if not self.settings.os.subsystem:
                         current_lib = os.path.join(lib_path, "libzlibstatic.a")
-                        rename(current_lib, os.path.join(lib_path, "libzlib.a"))
+                        rename(self, current_lib, os.path.join(lib_path, "libzlib.a"))
 
     def _extract_license(self):
         with chdir(self, os.path.join(self.source_folder)):
