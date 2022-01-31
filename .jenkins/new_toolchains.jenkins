@@ -86,6 +86,7 @@ def createReference(Map ctxt, List recipesToBuild) {
             envInside(ctxt) {
                 ctxt.shFunction('cmake --version')
                 ctxt.shFunction('conan --version')
+                ctxt.shFunction('conan profile detect --name build')
                 // ctxt.shFunction('conan config init --force')
                 // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
                 // ctxt.shFunction('conan config set hooks.conan-center')
