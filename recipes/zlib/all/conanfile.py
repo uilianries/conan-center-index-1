@@ -44,8 +44,11 @@ class ZlibConan(ConanFile):
     def configure(self):
         if self.options.shared:
             del self.options.fPIC
-        del self.settings.compiler.libcxx
-        del self.settings.compiler.cppstd
+        try:  # FIXME: This was not failing at 1.X
+            del self.settings.compiler.libcxx
+            del self.settings.compiler.cppstd
+        except Exception:
+            pass
 
     def source(self):
         get(self, **self.conan_data["sources"][str(self.version)], destination=self.source_folder, strip_root=True)
