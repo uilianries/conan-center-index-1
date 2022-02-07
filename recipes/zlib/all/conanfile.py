@@ -1,7 +1,7 @@
 from conan import ConanFile
 from conan.tools import Version
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-from conan.tools.files import get, patch, rename, chdir, load, save
+from conan.tools.files import get, patch, rename, chdir, load, save, copy
 from conans.tools import replace_in_file
 import os
 
@@ -45,7 +45,7 @@ class ZlibConan(ConanFile):
 
     def export_sources(self):
         for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
-            self.copy(_patch["patch_file"])
+            copy(self, _patch["patch_file"])
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -117,7 +117,7 @@ class ZlibConan(ConanFile):
 
     def package(self):
         self._extract_license()
-        self.copy("LICENSE", src=self._source_subfolder, dst="licenses")
+        copy(self, "LICENSE", src=self._source_subfolder, dst="licenses")
         cmake = CMake(self)
         cmake.install()
         self._rename_libraries()
