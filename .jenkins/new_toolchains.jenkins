@@ -27,7 +27,9 @@ String pipConanBranchInstall(String branch) {
 }
 
 List<Map> getBranchesInstalls() {
-    def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+    //def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+
+    def branches = [["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")]]
 
     // if (!isMaster()) {
     //     branches.add(0, ["name": "latest Conan 1.X", "branchInstall": "conan"])
@@ -223,39 +225,40 @@ node('Linux') {
                         }
                     }
                 }
-            },
-            macos: {
-                 node('Macos') {
-                     conanBranchesInstalls.each { branch ->
-                         stage("${branch.name}") {
-                             withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
-                                 createReference([python_host: 'python3',
-                                                 shFunction: { data -> sh(data) },
-                                                 isInsideDocker: false,
-                                                 profileHost: MACOS_PROFILE,
-                                                 branch: branch,
-                                                 upload: shouldUpload(branch.name)],
-                                                 toBuild)
-                             }
-                         }
-                     }
-                 }
-             },
-             windows: {
-                 node('Windows') {
-                     conanBranchesInstalls.each { branch ->
-                         stage("${branch.name}") {
-                            createReference([python_host: 'C:\\Python39\\python.exe',
-                                            shFunction: { data -> bat(data) },
-                                            isInsideDocker: false,
-                                            profileHost: WINDOWS_PROFILE,
-                                            branch: branch,
-                                            upload: shouldUpload(branch.name)],
-                                            toBuild)
-                         }
-                     }
-                 }
-             }
+            }
+            // ,
+            // macos: {
+            //      node('Macos') {
+            //          conanBranchesInstalls.each { branch ->
+            //              stage("${branch.name}") {
+            //                  withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
+            //                      createReference([python_host: 'python3',
+            //                                      shFunction: { data -> sh(data) },
+            //                                      isInsideDocker: false,
+            //                                      profileHost: MACOS_PROFILE,
+            //                                      branch: branch,
+            //                                      upload: shouldUpload(branch.name)],
+            //                                      toBuild)
+            //                  }
+            //              }
+            //          }
+            //      }
+            //  },
+            //  windows: {
+            //      node('Windows') {
+            //          conanBranchesInstalls.each { branch ->
+            //              stage("${branch.name}") {
+            //                 createReference([python_host: 'C:\\Python39\\python.exe',
+            //                                 shFunction: { data -> bat(data) },
+            //                                 isInsideDocker: false,
+            //                                 profileHost: WINDOWS_PROFILE,
+            //                                 branch: branch,
+            //                                 upload: shouldUpload(branch.name)],
+            //                                 toBuild)
+            //              }
+            //          }
+            //      }
+            //  }
         )
     }
 }
