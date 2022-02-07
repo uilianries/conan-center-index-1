@@ -9,11 +9,11 @@ void cancelPrevious() {
 }
 
 RAISE_HOOKS = true
-
 CONAN_BRANCH = 'develop2'
+ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
 
 def isMaster() {
-    String masterBranch = 'master2'
+    String masterBranch = 'master'
     return env.BRANCH_NAME == masterBranch
 }
 
@@ -27,18 +27,15 @@ String pipConanBranchInstall(String branch) {
 }
 
 List<Map> getBranchesInstalls() {
-    //def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
-
-    def branches = [["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")]]
-
-    // if (!isMaster()) {
-    //     branches.add(0, ["name": "latest Conan 1.X", "branchInstall": "conan"])
-    //     branches.add(0, ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")])
-    //     branches.add(0, ["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")])
-    //     if (CONAN_BRANCH != "develop2") {
-    //         branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
-    //     }
-    // }
+    def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+    if (!isMaster()) {
+        branches.add(0, ["name": "latest Conan 1.X", "branchInstall": "conan"])
+        branches.add(0, ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")])
+        branches.add(0, ["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")])
+        if (CONAN_BRANCH != "develop2") {
+            branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
+        }
+    }
     return branches
 }
 
@@ -142,10 +139,11 @@ def createReference(Map ctxt, List recipesToBuild) {
                     else {
                         ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
                         if (ctxt.upload) {
-                            echo "--------->>>> WILL UPLOAD"
-                        }
-                        else {
-                            echo "--------->>>> WILL NOTTTT UPLOAD"
+                            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
+                            withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                                ctxt.shFunction("conan remote login conancenterv2 ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}")
+                            }
+                            ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
                         }
                     }
                 }
@@ -225,40 +223,39 @@ node('Linux') {
                         }
                     }
                 }
-            }
-            // ,
-            // macos: {
-            //      node('Macos') {
-            //          conanBranchesInstalls.each { branch ->
-            //              stage("${branch.name}") {
-            //                  withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
-            //                      createReference([python_host: 'python3',
-            //                                      shFunction: { data -> sh(data) },
-            //                                      isInsideDocker: false,
-            //                                      profileHost: MACOS_PROFILE,
-            //                                      branch: branch,
-            //                                      upload: shouldUpload(branch.name)],
-            //                                      toBuild)
-            //                  }
-            //              }
-            //          }
-            //      }
-            //  },
-            //  windows: {
-            //      node('Windows') {
-            //          conanBranchesInstalls.each { branch ->
-            //              stage("${branch.name}") {
-            //                 createReference([python_host: 'C:\\Python39\\python.exe',
-            //                                 shFunction: { data -> bat(data) },
-            //                                 isInsideDocker: false,
-            //                                 profileHost: WINDOWS_PROFILE,
-            //                                 branch: branch,
-            //                                 upload: shouldUpload(branch.name)],
-            //                                 toBuild)
-            //              }
-            //          }
-            //      }
-            //  }
+            },
+            macos: {
+                 node('Macos') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                             withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
+                                 createReference([python_host: 'python3',
+                                                 shFunction: { data -> sh(data) },
+                                                 isInsideDocker: false,
+                                                 profileHost: MACOS_PROFILE,
+                                                 branch: branch,
+                                                 upload: shouldUpload(branch.name)],
+                                                 toBuild)
+                             }
+                         }
+                     }
+                 }
+             },
+             windows: {
+                 node('Windows') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                            createReference([python_host: 'C:\\Python39\\python.exe',
+                                            shFunction: { data -> bat(data) },
+                                            isInsideDocker: false,
+                                            profileHost: WINDOWS_PROFILE,
+                                            branch: branch,
+                                            upload: shouldUpload(branch.name)],
+                                            toBuild)
+                         }
+                     }
+                 }
+             }
         )
     }
 }
