@@ -45,7 +45,7 @@ class ZlibConan(ConanFile):
 
     def export_sources(self):
         for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
-            copy(self, _patch["patch_file"])
+            copy(self, _patch["patch_file"], src=".", dst=self.export_sources_folder)
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -117,7 +117,7 @@ class ZlibConan(ConanFile):
 
     def package(self):
         self._extract_license()
-        copy(self, "LICENSE", src=self._source_subfolder, dst="licenses")
+        copy(self, "LICENSE", src=self.source_folder, dst="licenses")
         cmake = CMake(self)
         cmake.install()
         self._rename_libraries()
