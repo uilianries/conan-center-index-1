@@ -3,6 +3,25 @@ import org.yaml.snakeyaml.Yaml
 RAISE_HOOKS = true
 CONAN_BRANCH = 'develop2'
 
+String masterBranch = 'master'
+boolean isMaster = env.BRANCH_NAME == masterBranch
+
+String pipConanBranchInstall(String branch) {
+    return "-e git+https://github.com/conan-io/conan.git@${branch}#egg=conan"
+}
+
+List<Map> getBranchesInstalls() {
+    def branches = [["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")],
+                    ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")],
+                    ["name": "latest Conan 1.X", "branchInstall": "conan"],
+                    ["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+
+    if (CONAN_BRANCH != "develop2") {
+        branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
+    }
+    return branches
+}
+
 LINUX_CONTAINER = 'conanio/gcc10'
 LINUX_PROFILE = """\
     [settings]
@@ -66,12 +85,12 @@ def envCreate(Map ctxt) {
     ctxt.shFunction("${ctxt.python_host} --version")
     if (ctxt.isInsideDocker) {
         // Alternate implementation because of https://issues.jenkins.io/browse/JENKINS-49076
-        ctxt.shFunction("pip install -e git+https://github.com/conan-io/conan.git@${CONAN_BRANCH}#egg=conan")
+        ctxt.shFunction("pip install ${ctxt.branch.branchInstall} --upgrade")
     }
     else {
         ctxt.shFunction("${ctxt.python_host} -m venv $venvDirectory")
         ctxt.shFunction("${binPath}python -m pip install -U pip")
-        ctxt.shFunction("${binPath}python -m pip install -e git+https://github.com/conan-io/conan.git@${CONAN_BRANCH}#egg=conan")
+        ctxt.shFunction("${binPath}python -m pip install ${ctxt.branch.branchInstall} --upgrade")
     }
 }
 
@@ -97,10 +116,12 @@ def createReference(Map ctxt, List recipesToBuild) {
                 envInside(ctxt) {
                     // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
                     writeFile(file: 'pr_host', text: ctxt.profileHost)
-                    if(!fileExists("./pr_build")){
-                        ctxt.shFunction('conan profile detect --name ./pr_build')
+                    if (ctxt.branch.name.contains("1.X")) {
+                        ctxt.shFunction("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
                     }
-                    ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_build")
+                    else {
+                        ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
+                    }
                 }
             }
         }
@@ -159,36 +180,56 @@ node('Linux') {
     }
 
     stage('Parallel on platforms') {
+        def conanBranchesInstalls = getBranchesInstalls()
         parallel(
             linux: {
-                docker.image(LINUX_CONTAINER).inside {
-                    createReference([python_host: 'python3',
-                                     shFunction: { data -> sh(data) },
-                                     isInsideDocker: true,
-                                     profileHost: LINUX_PROFILE],
-                                    toBuild)
-                }
-            },
-            macos: {
-                node('Macos') {
-                    withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
-                        createReference([python_host: 'python3',
-                                         shFunction: { data -> sh(data) },
-                                         isInsideDocker: false,
-                                         profileHost: MACOS_PROFILE],
-                                        toBuild)
+                conanBranchesInstalls.each { branch ->
+                    stage("${branch.name}") {
+                        def upload = isMaster && branch.name == "latest Conan 2.0-alpha"
+                        docker.image(LINUX_CONTAINER).inside {
+                            createReference([python_host: 'python3',
+                                            shFunction: { data -> sh(data) },
+                                            isInsideDocker: true,
+                                            profileHost: LINUX_PROFILE,
+                                            branch: branch,
+                                            upload: isMaster],
+                                            toBuild)
+                        }
                     }
                 }
             },
-            windows: {
-                node('Windows') {
-                    createReference([python_host: 'C:\\Python39\\python.exe',
-                                     shFunction: { data -> bat(data) },
-                                     isInsideDocker: false,
-                                     profileHost: WINDOWS_PROFILE],
-                                    toBuild)
-                }
-            }
+            macos: {
+                 node('Macos') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                             withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
+                                 createReference([python_host: 'python3',
+                                                 shFunction: { data -> sh(data) },
+                                                 isInsideDocker: false,
+                                                 profileHost: MACOS_PROFILE,
+                                                 branch: branch,
+                                                 upload: isMaster],
+                                                 toBuild)
+                             }
+                         }
+                     }
+                 }
+             },
+             windows: {
+                 node('Windows') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                            createReference([python_host: 'C:\\Python39\\python.exe',
+                                            shFunction: { data -> bat(data) },
+                                            isInsideDocker: false,
+                                            profileHost: WINDOWS_PROFILE,
+                                            branch: branch,
+                                            upload: isMaster],
+                                            toBuild)
+                         }
+                     }
+                 }
+             }
         )
     }
 }
