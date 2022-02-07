@@ -84,7 +84,6 @@ class ZlibConan(ConanFile):
                                       '/* may be set to #if 1 by ./configure */',
                                       '#if defined(HAVE_STDARG_H) && (1-HAVE_STDARG_H-1 != 0)')
 
-
     def build(self):
         self._patch_sources()
         make_target = "zlib" if self.options.shared else "zlibstatic"
