@@ -3,22 +3,31 @@ import org.yaml.snakeyaml.Yaml
 RAISE_HOOKS = true
 CONAN_BRANCH = 'develop2'
 
-String masterBranch = 'master'
-boolean isMaster = env.BRANCH_NAME == masterBranch
+def isMaster() {
+    String masterBranch = 'master2'
+    return env.BRANCH_NAME == masterBranch
+}
+
+def shouldUpload(branchName) {
+    boolean isLatestAlpha  = branchName == "latest Conan 2.0-alpha"
+    return isMaster() && isLatestAlpha
+}
 
 String pipConanBranchInstall(String branch) {
     return "-e git+https://github.com/conan-io/conan.git@${branch}#egg=conan"
 }
 
 List<Map> getBranchesInstalls() {
-    def branches = [["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")],
-                    ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")],
-                    ["name": "latest Conan 1.X", "branchInstall": "conan"],
-                    ["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+    def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
 
-    if (CONAN_BRANCH != "develop2") {
-        branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
-    }
+    // if (!isMaster()) {
+    //     branches.add(0, ["name": "latest Conan 1.X", "branchInstall": "conan"])
+    //     branches.add(0, ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")])
+    //     branches.add(0, ["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")])
+    //     if (CONAN_BRANCH != "develop2") {
+    //         branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
+    //     }
+    // }
     return branches
 }
 
@@ -121,6 +130,12 @@ def createReference(Map ctxt, List recipesToBuild) {
                     }
                     else {
                         ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
+                        if (ctxt.upload) {
+                            echo "--------->>>> WILL UPLOAD"
+                        }
+                        else {
+                            echo "--------->>>> WILL NOTTTT UPLOAD"
+                        }
                     }
                 }
             }
@@ -185,14 +200,13 @@ node('Linux') {
             linux: {
                 conanBranchesInstalls.each { branch ->
                     stage("${branch.name}") {
-                        def upload = isMaster && branch.name == "latest Conan 2.0-alpha"
                         docker.image(LINUX_CONTAINER).inside {
                             createReference([python_host: 'python3',
                                             shFunction: { data -> sh(data) },
                                             isInsideDocker: true,
                                             profileHost: LINUX_PROFILE,
                                             branch: branch,
-                                            upload: isMaster],
+                                            upload: shouldUpload(branch.name)],
                                             toBuild)
                         }
                     }
@@ -208,7 +222,7 @@ node('Linux') {
                                                  isInsideDocker: false,
                                                  profileHost: MACOS_PROFILE,
                                                  branch: branch,
-                                                 upload: isMaster],
+                                                 upload: shouldUpload(branch.name)],
                                                  toBuild)
                              }
                          }
@@ -224,7 +238,7 @@ node('Linux') {
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
                                             branch: branch,
-                                            upload: isMaster],
+                                            upload: shouldUpload(branch.name)],
                                             toBuild)
                          }
                      }
