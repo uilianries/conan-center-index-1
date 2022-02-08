@@ -28,7 +28,8 @@ class TestPackageConan(ConanFile):
             "-j", str(tools.cpu_count()),
             "-C", self.source_folder,
             "-f", os.path.join(self.source_folder, "SConstruct"),
-            "FOOBAR='-c -o -n -a -n'"
+            "FOOBAR='-c -o -n -a -n'",
+            'BAZ="-fPIC -m64 -O3 -s"'
         ]
 
         self.run("scons {}".format(" ".join(scons_args)), run_environment=True)

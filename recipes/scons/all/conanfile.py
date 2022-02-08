@@ -10,7 +10,7 @@ class SConsConan(ConanFile):
     license = "MIT"
     url = "https://github.com/conan-io/conan-center-index/"
     homepage = "https://scons.org"
-    topics = ("scons", "build", "configuration", "development")
+    topics = ("build", "configuration", "development")
     settings = "os"  # Added to let the CI test this package on all os'es
 
     _autotools = None
@@ -67,7 +67,7 @@ class SConsConan(ConanFile):
             currentdir="$(dirname "$(realpath "$0")")"
 
             export PYTHONPATH="$currentdir/../res:$PYTHONPATH"
-            exec ${PYTHON:-python3} "$currentdir/../res/SCons/__main__.py" $*
+            exec ${PYTHON:-python3} "$currentdir/../res/SCons/__main__.py" "$@"
         """))
         self._chmod_x(self._scons_sh)
         tools.save(self._scons_cmd, textwrap.dedent(r"""

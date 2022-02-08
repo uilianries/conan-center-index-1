@@ -1,7 +1,23 @@
 # SConstruct
 import os
 
-env = Environment()
+def _converter(val):
+    if val == 'none':
+      val = []
+    else:
+      val = val.split(' ')
+    return val
+
+def RawListVariable(key, help, default):
+    return (key, '%s' % (help), default, None, lambda val: _converter(val))
+
+opts = Variables()
+opts.AddVariables(
+    RawListVariable("FOOBAR", "Testing", None),
+    RawListVariable("BAZ", "Testing", None),
+)
+
+env = Environment(variables=opts)
 
 conan = SConscript("SConscript_conan")
 if not conan:
