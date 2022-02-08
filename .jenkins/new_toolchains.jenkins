@@ -5,9 +5,10 @@ ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
 
 // If you want the ci to run against
 // a branch in a fork configure these variables
-//CONAN_BRANCH = ''
-//CONAN_FORK = ''
-//CONAN_FORK_VERSION = '' 1.X if it's from Conan 1.X otherwise 2.0
+
+CONAN_BRANCH = ''
+CONAN_FORK = ''
+CONAN_FORK_VERSION = '' // 1.X if it's from Conan 1.X otherwise 2.0
 
 void cancelPrevious() {
     stage("Cancelling previous") {
@@ -34,7 +35,7 @@ String pipConanBranchInstall(String branch, String fork='conan-io') {
 List<Map> getBranchesInstalls() {
     def branches = [['name': 'latest Conan 2.0-alpha', 'branchInstall': 'conan --pre']]
     if (!isMaster()) {
-        branches.add(0, ['name': 'latest Conan 1.X', 'branchInstall': 'conan'])
+        //branches.add(0, ['name': 'latest Conan 1.X', 'branchInstall': 'conan'])
         branches.add(0, ['name': 'develop Conan 1.X', 'branchInstall': pipConanBranchInstall('develop')])
         branches.add(0, ['name': 'develop Conan 2.0', 'branchInstall': pipConanBranchInstall('develop2')])
         if (CONAN_BRANCH != '' && CONAN_FORK != '') {
