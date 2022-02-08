@@ -9,10 +9,6 @@ ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
 //CONAN_FORK = ''
 //CONAN_FORK_VERSION = '' 1.X if it's from Conan 1.X otherwise 2.0
 
-CONAN_BRANCH = 'add_missing_tools_develop'
-CONAN_FORK = 'czoido'
-CONAN_FORK_VERSION = '1.X'
-
 void cancelPrevious() {
     stage("Cancelling previous") {
         def buildNumber = env.BUILD_NUMBER as int
