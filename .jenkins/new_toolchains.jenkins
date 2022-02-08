@@ -7,9 +7,11 @@ ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
 // a branch in a fork configure these variables
 //CONAN_BRANCH = ''
 //CONAN_FORK = ''
+//CONAN_FORK_VERSION = '' 1.X if it's from Conan 1.X otherwise 2.0
 
 CONAN_BRANCH = 'add_missing_tools_develop'
 CONAN_FORK = 'czoido'
+CONAN_FORK_VERSION = '1.X'
 
 void cancelPrevious() {
     stage("Cancelling previous") {
@@ -40,7 +42,7 @@ List<Map> getBranchesInstalls() {
         branches.add(0, ['name': 'develop Conan 1.X', 'branchInstall': pipConanBranchInstall('develop')])
         branches.add(0, ['name': 'develop Conan 2.0', 'branchInstall': pipConanBranchInstall('develop2')])
         if (CONAN_BRANCH != '' && CONAN_FORK != '') {
-            branches.add(0, ['name': "${CONAN_FORK} - ${CONAN_BRANCH}", 'branchInstall': pipConanBranchInstall(CONAN_BRANCH, CONAN_FORK)]);
+            branches.add(0, ['name': "${CONAN_FORK} - ${CONAN_BRANCH}(${CONAN_FORK_VERSION})", 'branchInstall': pipConanBranchInstall(CONAN_BRANCH, CONAN_FORK)]);
         }
     }
     return branches
