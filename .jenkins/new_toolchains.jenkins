@@ -1,5 +1,13 @@
 import org.yaml.snakeyaml.Yaml
 
+RAISE_HOOKS = true
+ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
+
+// If you want the ci to run against
+// a branch in a fork configure these variables
+CONAN_BRANCH = 'develop2'
+CONAN_FORK = 'conan-io'
+
 void cancelPrevious() {
     stage("Cancelling previous") {
         def buildNumber = env.BUILD_NUMBER as int
@@ -7,10 +15,6 @@ void cancelPrevious() {
         milestone(buildNumber)
     }
 }
-
-RAISE_HOOKS = true
-CONAN_BRANCH = 'develop2'
-ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
 
 def isMaster() {
     String masterBranch = 'master'
@@ -22,18 +26,18 @@ def shouldUpload(branchName) {
     return isMaster() && isLatestAlpha
 }
 
-String pipConanBranchInstall(String branch) {
-    return "-e git+https://github.com/conan-io/conan.git@${branch}#egg=conan"
+String pipConanBranchInstall(String branch, String fork='conan-io') {
+    return "-e git+https://github.com/${fork}/conan.git@${branch}#egg=conan"
 }
 
 List<Map> getBranchesInstalls() {
-    def branches = [["name": "latest Conan 2.0-alpha", "branchInstall": "conan --pre"]]
+    def branches = [['name': 'latest Conan 2.0-alpha', 'branchInstall': 'conan --pre']]
     if (!isMaster()) {
-        branches.add(0, ["name": "latest Conan 1.X", "branchInstall": "conan"])
-        branches.add(0, ["name": "develop Conan 1.X", "branchInstall": pipConanBranchInstall("develop")])
-        branches.add(0, ["name": "develop Conan 2.0", "branchInstall": pipConanBranchInstall("develop2")])
-        if (CONAN_BRANCH != "develop2") {
-            branches.add(0, ["branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH)]);
+        branches.add(0, ['name': 'latest Conan 1.X', 'branchInstall': 'conan'])
+        branches.add(0, ['name': 'develop Conan 1.X', 'branchInstall': pipConanBranchInstall('develop')])
+        branches.add(0, ['name': 'develop Conan 2.0', 'branchInstall': pipConanBranchInstall('develop2')])
+        if (CONAN_BRANCH != 'develop2' || CONAN_FORK != 'conan-io') {
+            branches.add(0, ["fork: ${CONAN_FORK}: branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH), CONAN_FORK]);
         }
     }
     return branches
@@ -133,7 +137,7 @@ def createReference(Map ctxt, List recipesToBuild) {
                 envInside(ctxt) {
                     // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
                     writeFile(file: 'pr_host', text: ctxt.profileHost)
-                    if (ctxt.branch.name.contains("1.X")) {
+                    if (ctxt.branch.name.contains('1.X')) {
                         ctxt.shFunction("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
                     }
                     else {
@@ -228,7 +232,7 @@ node('Linux') {
                  node('Macos') {
                      conanBranchesInstalls.each { branch ->
                          stage("${branch.name}") {
-                             withEnv(["PATH+EXTRA=/usr/local/bin"]) { // Required to find CMake
+                             withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
                                  createReference([python_host: 'python3',
                                                  shFunction: { data -> sh(data) },
                                                  isInsideDocker: false,
