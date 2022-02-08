@@ -37,7 +37,7 @@ List<Map> getBranchesInstalls() {
         branches.add(0, ['name': 'develop Conan 1.X', 'branchInstall': pipConanBranchInstall('develop')])
         branches.add(0, ['name': 'develop Conan 2.0', 'branchInstall': pipConanBranchInstall('develop2')])
         if (CONAN_BRANCH != 'develop2' || CONAN_FORK != 'conan-io') {
-            branches.add(0, ["fork: ${CONAN_FORK}: branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH), CONAN_FORK]);
+            branches.add(0, ["fork: ${CONAN_FORK}: branch: ${CONAN_BRANCH}": pipConanBranchInstall(CONAN_BRANCH, CONAN_FORK)]);
         }
     }
     return branches
