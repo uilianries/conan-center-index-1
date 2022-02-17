@@ -69,17 +69,17 @@ class ZlibConan(ConanFile):
             patch(self, patch_file=os.path.join(self.folders.base_source, _patch["patch_file"]))
 
         # https://github.com/madler/zlib/issues/268
-        replace_in_file(os.path.join(self.source_folder, 'gzguts.h'), '#if defined(_WIN32) || defined(__CYGWIN__)', '#if defined(_WIN32) || defined(__MINGW32__)')
+        replace_in_file(self, os.path.join(self.source_folder, 'gzguts.h'), '#if defined(_WIN32) || defined(__CYGWIN__)', '#if defined(_WIN32) || defined(__MINGW32__)')
 
         is_apple_clang12 = self.settings.compiler == "apple-clang" and Version(str(self.settings.compiler.version)) >= "12.0"
         if not is_apple_clang12:
             for filename in ['zconf.h', 'zconf.h.cmakein', 'zconf.h.in']:
                 filename = os.path.join(self.source_folder, filename)
-                replace_in_file(filename,
+                replace_in_file(self, filename,
                                       '#ifdef HAVE_UNISTD_H    '
                                       '/* may be set to #if 1 by ./configure */',
                                       '#if defined(HAVE_UNISTD_H) && (1-HAVE_UNISTD_H-1 != 0)')
-                replace_in_file(filename,
+                replace_in_file(self, filename,
                                       '#ifdef HAVE_STDARG_H    '
                                       '/* may be set to #if 1 by ./configure */',
                                       '#if defined(HAVE_STDARG_H) && (1-HAVE_STDARG_H-1 != 0)')
