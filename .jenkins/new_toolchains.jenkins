@@ -147,7 +147,7 @@ def createReference(Map ctxt, List recipesToBuild) {
                         if (ctxt.upload) {
                             ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
                             withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
-                                ctxt.shFunction("conan remote login conancenterv2 ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}")
+                                ctxt.shFunction('conan remote login conancenterv2 ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}')
                             }
                             ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
                         }
