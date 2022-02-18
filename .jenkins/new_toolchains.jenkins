@@ -1,0 +1,267 @@
+import org.yaml.snakeyaml.Yaml
+
+RAISE_HOOKS = true
+ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
+
+// If you want the ci to run against
+// a branch in a fork configure these variables
+
+CONAN_BRANCH = ''
+CONAN_FORK = ''
+CONAN_FORK_VERSION = '' // 1.X if it's from Conan 1.X otherwise 2.0
+
+void cancelPrevious() {
+    stage("Cancelling previous") {
+        def buildNumber = env.BUILD_NUMBER as int
+        if (buildNumber > 1) milestone(buildNumber - 1)
+        milestone(buildNumber)
+    }
+}
+
+def isMaster() {
+    String masterBranch = 'master'
+    return env.BRANCH_NAME == masterBranch
+}
+
+def shouldUpload(branchName) {
+    boolean isLatestAlpha  = branchName == "latest Conan 2.0-alpha"
+    return isMaster() && isLatestAlpha
+}
+
+String pipConanBranchInstall(String branch, String fork='conan-io') {
+    return "-e git+https://github.com/${fork}/conan.git@${branch}#egg=conan"
+}
+
+List<Map> getBranchesInstalls() {
+    def branches = [['name': 'latest Conan 2.0-alpha', 'branchInstall': 'conan --pre']]
+    if (!isMaster()) {
+        //branches.add(0, ['name': 'latest Conan 1.X', 'branchInstall': 'conan'])
+        branches.add(0, ['name': 'develop Conan 1.X', 'branchInstall': pipConanBranchInstall('develop')])
+        branches.add(0, ['name': 'develop Conan 2.0', 'branchInstall': pipConanBranchInstall('develop2')])
+        if (CONAN_BRANCH != '' && CONAN_FORK != '') {
+            branches.add(0, ['name': "${CONAN_FORK} - ${CONAN_BRANCH}(${CONAN_FORK_VERSION})", 'branchInstall': pipConanBranchInstall(CONAN_BRANCH, CONAN_FORK)]);
+        }
+    }
+    return branches
+}
+
+LINUX_CONTAINER = 'conanio/gcc10'
+LINUX_PROFILE = """\
+    [settings]
+    os=Linux
+    arch=x86_64
+    compiler=gcc
+    compiler.libcxx=libstdc++
+    compiler.version=10
+    build_type=Release
+    [options]
+    [tool_requires]
+    [env]
+    """.stripIndent()
+
+MACOS_PROFILE = """\
+    [settings]
+    os=Macos
+    arch=x86_64
+    compiler=apple-clang
+    compiler.libcxx=libc++
+    compiler.version=12.0
+    build_type=Release
+    [options]
+    [tool_requires]
+    [env]
+    """.stripIndent()
+
+WINDOWS_PROFILE = """\
+    [settings]
+    os=Windows
+    arch=x86_64
+    compiler=Visual Studio
+    compiler.runtime=MD
+    compiler.version=15
+    build_type=Release
+    [options]
+    [tool_requires]
+    [env]
+    """.stripIndent()
+
+
+@NonCPS
+static removeDuplicates(List list) {
+    list.unique(true, { lhs, rhs -> lhs <=> rhs })
+}
+
+def envInside(Map ctxt, Closure closure) {
+    String venvDirectory = isUnix() ? "${pwd()}/conanenv" : "${pwd()}\\conanenv"
+    String binPath = isUnix() ? "$venvDirectory/bin/" : "$venvDirectory\\Scripts\\"
+    String conanHome = isUnix() ? "${pwd()}/.conan" : "${pwd()}\\.conan"
+    String hookErrorLevel = RAISE_HOOKS ? '40' : '50'
+    withEnv(["PATH+EXTRA=${binPath}", "CONAN_USER_HOME=${conanHome}", "CONAN_USER_HOME_SHORT=${conanHome}", "CONAN_HOOK_ERROR_LEVEL=${hookErrorLevel}"]) {
+        // This doesn't work if running docker.inside (https://issues.jenkins.io/browse/JENKINS-49076)
+        closure()
+    }
+}
+
+def envCreate(Map ctxt) {
+    String venvDirectory = isUnix() ? "${pwd()}/conanenv" : "${pwd()}\\conanenv"
+    String binPath = isUnix() ? "$venvDirectory/bin/" : "$venvDirectory\\Scripts\\"
+    ctxt.shFunction("${ctxt.python_host} --version")
+    if (ctxt.isInsideDocker) {
+        // Alternate implementation because of https://issues.jenkins.io/browse/JENKINS-49076
+        ctxt.shFunction("pip install ${ctxt.branch.branchInstall} --upgrade")
+    }
+    else {
+        ctxt.shFunction("${ctxt.python_host} -m venv $venvDirectory")
+        ctxt.shFunction("${binPath}python -m pip install -U pip")
+        ctxt.shFunction("${binPath}python -m pip install ${ctxt.branch.branchInstall} --upgrade")
+    }
+}
+
+def createReference(Map ctxt, List recipesToBuild) {
+    try {
+        stage('Checkout SCM') {
+            checkout scm
+        }
+
+        stage('Configure environment') {
+            envCreate(ctxt)
+            envInside(ctxt) {
+                ctxt.shFunction('cmake --version')
+                ctxt.shFunction('conan --version')
+                // ctxt.shFunction('conan config init --force')
+                // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
+                // ctxt.shFunction('conan config set hooks.conan-center')
+            }
+        }
+
+        for (recipe in recipesToBuild) {
+            stage("Create ${recipe.reference}") {
+                envInside(ctxt) {
+                    // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
+                    writeFile(file: 'pr_host', text: ctxt.profileHost)
+                    if (ctxt.branch.name.contains('1.X')) {
+                        ctxt.shFunction("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
+                    }
+                    else {
+                        ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
+                        if (ctxt.upload) {
+                            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
+                            withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                                ctxt.shFunction("conan remote login conancenterv2 ${ARTIFACTORY_USER} -p ${ARTIFACTORY_PASSWORD}")
+                            }
+                            ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    finally {
+        stage("CleanWS") {
+            cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true,
+                cleanWhenSuccess: true, cleanWhenUnstable: true, disableDeferredWipeout: true, deleteDirs: true,
+                notFailBuild: true)
+        }
+    }
+}
+
+node('Linux') {
+    
+    cancelPrevious() 
+
+    List<String> recipes = []
+    stage('Compute changes') {
+        def urc = scm.userRemoteConfigs
+        urc[0].refspec = "${urc[0].refspec} +refs/heads/master:refs/remotes/origin/master"
+        checkout([
+            $class: 'GitSCM',
+            branches: scm.branches,
+            doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+            extensions: scm.extensions,
+            userRemoteConfigs: urc
+        ])
+
+        def output = sh(script: 'git diff --name-only origin/master --diff-filter=AMR', returnStdout: true)
+        for (line in output.split('\n')) {
+            def matcher = (line =~ /^recipes\/([^\/]+)\//)
+            if (matcher) {
+                recipes.add(matcher[0][1] as String)
+            }
+        }
+        removeDuplicates(recipes)
+    }
+
+    List toBuild = []
+    stage('Parse config.yml to get versions') {
+        for (recipe in recipes) {
+            String content = readFile("recipes/${recipe}/config.yml")
+            Yaml parser = new Yaml()
+            Map data = parser.load(content)
+            def versions = data.get('versions')
+            for (int i = 0; i < versions.size(); i++) {
+                def version = versions.keySet()[i]
+                Map<String, String> props = versions[version]
+                toBuild.add([
+                    folder: "recipes/${recipe}/${props.folder}/conanfile.py",
+                    reference: "${recipe}/${version}",
+                    name: "${recipe}",
+                    version: "${version}"
+                ])
+            }
+        }
+        echo "Recipes to build:\n - ${ toBuild.collect({ "$it.reference: $it.folder" }).join('\n - ')}"
+    }
+
+    stage('Parallel on platforms') {
+        def conanBranchesInstalls = getBranchesInstalls()
+        parallel(
+            linux: {
+                conanBranchesInstalls.each { branch ->
+                    stage("${branch.name}") {
+                        docker.image(LINUX_CONTAINER).inside {
+                            createReference([python_host: 'python3',
+                                            shFunction: { data -> sh(data) },
+                                            isInsideDocker: true,
+                                            profileHost: LINUX_PROFILE,
+                                            branch: branch,
+                                            upload: shouldUpload(branch.name)],
+                                            toBuild)
+                        }
+                    }
+                }
+            },
+            macos: {
+                 node('Macos') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                             withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
+                                 createReference([python_host: 'python3',
+                                                 shFunction: { data -> sh(data) },
+                                                 isInsideDocker: false,
+                                                 profileHost: MACOS_PROFILE,
+                                                 branch: branch,
+                                                 upload: shouldUpload(branch.name)],
+                                                 toBuild)
+                             }
+                         }
+                     }
+                 }
+             },
+             windows: {
+                 node('Windows') {
+                     conanBranchesInstalls.each { branch ->
+                         stage("${branch.name}") {
+                            createReference([python_host: 'C:\\Python39\\python.exe',
+                                            shFunction: { data -> bat(data) },
+                                            isInsideDocker: false,
+                                            profileHost: WINDOWS_PROFILE,
+                                            branch: branch,
+                                            upload: shouldUpload(branch.name)],
+                                            toBuild)
+                         }
+                     }
+                 }
+             }
+        )
+    }
+}
