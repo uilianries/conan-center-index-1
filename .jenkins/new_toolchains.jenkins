@@ -156,6 +156,7 @@ def createReference(Map ctxt, List recipesToBuild) {
                     }
                 }
             }
+        }
     }
     finally {
         stage("CleanWS") {
