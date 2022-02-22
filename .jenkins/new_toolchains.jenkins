@@ -147,7 +147,12 @@ def createReference(Map ctxt, List recipesToBuild) {
                         if (ctxt.upload) {
                             ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
                             withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
-                                ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
+                                if (ctxt.isWindows) {
+                                    ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
+                                }
+                                else {
+                                    ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
+                                }
                             }
                             ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
                         }
@@ -232,6 +237,7 @@ node('Linux') {
                         docker.image(LINUX_CONTAINER).inside {
                             createReference([python_host: 'python3',
                                             shFunction: { data -> sh(data) },
+                                            isWindows: false,
                                             isInsideDocker: true,
                                             profileHost: LINUX_PROFILE,
                                             branch: branch,
@@ -248,6 +254,7 @@ node('Linux') {
                              withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
                                  createReference([python_host: 'python3',
                                                  shFunction: { data -> sh(data) },
+                                                 isWindows: false,
                                                  isInsideDocker: false,
                                                  profileHost: MACOS_PROFILE,
                                                  branch: branch,
@@ -264,6 +271,7 @@ node('Linux') {
                          stage("${branch.name}") {
                             createReference([python_host: 'C:\\Python39\\python.exe',
                                             shFunction: { data -> bat(data) },
+                                            isWindows: true,
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
                                             branch: branch,
