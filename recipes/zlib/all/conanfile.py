@@ -117,7 +117,7 @@ class ZlibConan(ConanFile):
 
     def package(self):
         self._extract_license()
-        copy(self, "LICENSE", src=self.source_folder, dst="licenses")
+        copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
         cmake = CMake(self)
         cmake.install()
         self._rename_libraries()
@@ -129,7 +129,5 @@ class ZlibConan(ConanFile):
         self.cpp_info.set_property("cmake_find_mode", "both")
         self.cpp_info.libs = ["zlib" if self.settings.os == "Windows" and not self.settings.os.subsystem else "z"]
 
-
-        # !!! .names has to be mocked
-        # self.cpp_info.names["cmake_find_package"] = "ZLIB"
-        # self.cpp_info.names["cmake_find_package_multi"] = "ZLIB"
+        self.cpp_info.names["cmake_find_package"] = "ZLIB"
+        self.cpp_info.names["cmake_find_package_multi"] = "ZLIB"
