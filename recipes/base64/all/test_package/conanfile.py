@@ -21,5 +21,5 @@ class CppcodecTestConan(ConanFile):
 
     def test(self):
         if not cross_building(self):
-            bin_path = os.path.join(os.getcwd(), "example")
+            bin_path = os.path.join(os.getcwd(), self.cpp.build.bindirs[0], "example")
             self.run(bin_path)

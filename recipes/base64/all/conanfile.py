@@ -3,6 +3,7 @@ from conan import ConanFile
 from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain
 from conan.tools.cmake import CMake, cmake_layout, CMakeToolchain, CMakeDeps
 from conan.tools.files import get, patch, copy, chdir
+from conan.tools.microsoft import is_msvc
 
 
 class Base64Conan(ConanFile):
@@ -22,7 +23,7 @@ class Base64Conan(ConanFile):
     }
 
     def generate(self):
-        if self.settings.compiler == "Visual Studio":
+        if is_msvc(self):
             toolchain = CMakeToolchain(self)
             toolchain.generate()
             deps = CMakeDeps(self)
@@ -41,7 +42,7 @@ class Base64Conan(ConanFile):
             deps.generate()
 
     def layout(self):
-        if self.settings.compiler == "Visual Studio":
+        if is_msvc(self):
             cmake_layout(self)
         else:
             self.folders.build = os.path.join("build", str(self.settings.build_type))
@@ -66,7 +67,7 @@ class Base64Conan(ConanFile):
             patch(self, **p)
 
     def build(self):
-        if self.settings.compiler == "Visual Studio":
+        if is_msvc(self):
             cmake = CMake(self)
             cmake.configure()
             cmake.build(target="base64")
@@ -78,8 +79,9 @@ class Base64Conan(ConanFile):
     def package(self):
         copy(self, "*.h", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
         # As the Makefile lives in source, the artifacts are built there.
-        copy(self, "*.a", self.source_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
-        copy(self, "*.lib", self.source_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
+        origin_lib_folder = self.build_folder if is_msvc(self) else self.source_folder
+        copy(self, "*.a", origin_lib_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
+        copy(self, "*.lib", origin_lib_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
         copy(self, "LICENSE", self.source_folder, os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
