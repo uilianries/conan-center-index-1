@@ -51,8 +51,14 @@ class Base64Conan(ConanFile):
     def config_options(self):
         if self.settings.os == 'Windows':
             del self.options.fPIC
-        del self.settings.compiler.cppstd
-        del self.settings.compiler.libcxx
+        try:
+            del self.settings.compiler.cppstd
+        except Exception:
+            pass
+        try:
+            del self.settings.compiler.libcxx
+        except Exception:
+            pass
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
