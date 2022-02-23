@@ -1,6 +1,6 @@
 import os
 from conan import ConanFile
-from conan.tools.cmake import CMake
+from conan.tools.cmake import CMake, cmake_layout
 from conan.tools.build import cross_building
 
 
@@ -11,12 +11,15 @@ class CppcodecTestConan(ConanFile):
     def requirements(self):
         self.requires(self.tested_reference_str)
 
+    def layout(self):
+        cmake_layout(self)
+
     def build(self):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
 
     def test(self):
-        if not cross_building(self.settings):
-            bin_path = os.path.join("bin", "example")
+        if not cross_building(self):
+            bin_path = os.path.join(os.getcwd(), "example")
             self.run(bin_path)

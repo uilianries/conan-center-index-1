@@ -2,7 +2,7 @@ import os
 from conan import ConanFile
 from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain
 from conan.tools.cmake import CMake, cmake_layout, CMakeToolchain, CMakeDeps
-from conan.tools.files import get, patch, copy
+from conan.tools.files import get, patch, copy, chdir
 
 
 class Base64Conan(ConanFile):
@@ -36,9 +36,6 @@ class Base64Conan(ConanFile):
                 env.define("SSE41_CFLAGS", "-msse4.1")
                 env.define("SSE42_CFLAGS", "-msse4.2")
                 env.define("AVX_CFLAGS", "-mavx")
-            else:
-                # ARM-specific instructions can be enabled here
-                extra_env = {}
             toolchain.generate(env)
             deps = AutotoolsDeps(self)
             deps.generate()
@@ -47,7 +44,9 @@ class Base64Conan(ConanFile):
         if self.settings.compiler == "Visual Studio":
             cmake_layout(self)
         else:
-            self.folders.build = str(self.settings.build_type)
+            self.folders.build = os.path.join("build", str(self.settings.build_type))
+            self.folders.generators = os.path.join(self.folders.build, "conan")
+        self.folders.source = "src"
 
     def config_options(self):
         if self.settings.os == 'Windows':
@@ -57,24 +56,24 @@ class Base64Conan(ConanFile):
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
-
-    def _patch_sources(self):
         for p in self.conan_data["patches"][self.version]:
             patch(self, **p)
 
     def build(self):
-        self._patch_sources()
         if self.settings.compiler == "Visual Studio":
             cmake = CMake(self)
             cmake.configure()
             cmake.build(target="base64")
         else:
-            Autotools(self).make(target="lib/libbase64.a")
+            # for local flow: there is no configure so the "Makefile" is not generated in build is still at source
+            with chdir(self, self.source_folder):
+                Autotools(self).make(target="lib/libbase64.a")
 
     def package(self):
         copy(self, "*.h", os.path.join(self.source_folder, "include"), os.path.join(self.package_folder, "include"))
-        copy(self, "*.a", self.build_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
-        copy(self, "*.lib", self.build_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
+        # As the Makefile lives in source, the artifacts are built there.
+        copy(self, "*.a", self.source_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
+        copy(self, "*.lib", self.source_folder, os.path.join(self.package_folder, "lib"), keep_path=False)
         copy(self, "LICENSE", self.source_folder, os.path.join(self.package_folder, "licenses"))
 
     def package_info(self):
