@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.1)
 project(test_package)
+
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
+conan_basic_setup(TARGETS)
+
+find_package(openldap CONFIG REQUIRED)
+
 add_executable(${PROJECT_NAME} test_package.cpp)
-# For gcc command, the -lA must come before -lB for static libs, if A depends on B.
-list(REMOVE_ITEM CONAN_LIBS "ldap")
-list(INSERT CONAN_LIBS 0 "ldap")
-target_link_libraries(${PROJECT_NAME} ${CONAN_LIBS})
+
+target_link_libraries(${PROJECT_NAME} openldap::openldap)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)

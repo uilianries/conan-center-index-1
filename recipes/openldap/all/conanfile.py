@@ -1,114 +1,90 @@
 import os
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
+required_conan_version = ">=1.43.0"
+
 
 class OpenldapConan(ConanFile):
     name = "openldap"
     description = "OpenLDAP C++ library"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://www.openldap.org/"
-    license = "OpenLDAP"
-    topics = "openldap"
+    license = "OLDAP-2.8"
+    topics = ("ldap", "load-balancer", "directory-access")
     exports_sources = ["patches/*"]
-    settings = {
-        "os": ["Linux"],
-        "compiler": {
-            "gcc": {"version": ["8", "8.2", "10", "10.2"]}
-        },
-        "build_type": ["Debug", "Release"],
-        "arch": ["x86_64"]
-    }
-    generators = "cmake"
+    settings = settings = "os", "compiler", "build_type", "arch"
     options = {
         "shared": [True, False],
-        "cyrus_sasl": [True, False]
+        "fPIC": [True, False],
+        "with_cyrus_sasl": [True, False]
     }
     default_options = {
         "shared": False,
-        "cyrus_sasl": True
+        "fPIC": True,
+        "with_cyrus_sasl": True
+
     }
+    _autotools = None
+    _configure_vars = None
 
     @property
     def _source_subfolder(self):
         return "source_subfolder"
 
-    def requirements(self):
-        self.requires("openssl/1.1.1k")
-        if self.options.cyrus_sasl:
-            self.requires("cyrus-sasl/2.1.27")
+    def configure(self):
+        if self.options.shared:
+            del self.options.fPIC
 
     def source(self):
-        conan_data = self.conan_data["sources"][self.version]
-        tools.get(url=conan_data["url"], sha256=conan_data["sha256"])
-        extracted_dir = self.name + "-" + self.version
-        os.rename(extracted_dir, self._source_subfolder)
+        tools.get(**self.conan_data["sources"][self.version], strip_root=True, destination=self._source_subfolder)
+
+    def requirements(self):
+        self.requires("openssl/1.1.1m")
+        if self.options.with_cyrus_sasl:
+            self.requires("cyrus-sasl/2.1.27")
+
+    def validate(self):
+        if self.settings.os != "Linux":
+            raise ConanInvalidConfiguration(f"{self.name} is only supported on Linux")
+
+    def _configure_autotools(self):
+        if self._autotools:
+            return self._autotools
+        yes_no = lambda v: "yes" if v else "no"
+        self._autotools = AutoToolsBuildEnvironment(self)
+        configure_args = [
+            "--enable-shared={}".format(yes_no(self.options.shared)),
+            "--enable-static={}".format(yes_no(not self.options.shared)),
+            "--with-cyrus_sasl={}".format(yes_no(self.options.with_cyrus_sasl)),
+            "--with-pic={}".format(yes_no(self.options.get_safe("fPIC", True))),
+            "--without-fetch",
+            "--with-tls=openssl",
+            "--enable-auditlog"]
+        self._configure_vars  = self._autotools.vars
+        self._configure_vars["systemdsystemunitdir"] = os.path.join(self.package_folder, "res")
+        self._autotools.configure(args=configure_args, configure_dir=self._source_subfolder, vars=self._configure_vars)
+        return self._autotools
 
     def build(self):
         for patch in self.conan_data["patches"][self.version]:
             tools.patch(**patch)
-        conf_args = []
-        autotools = AutoToolsBuildEnvironment(self)
-        if self.options.shared:
-            conf_args.extend(["--enable-shared", "--disable-static"])
-        else:
-            conf_args.extend(["--disable-shared", "--enable-static"])
-        if self.options.cyrus_sasl:
-            conf_args.append("--with-cyrus_sasl")
-        else:
-            conf_args.append("--without-cyrus_sasl")
-        conf_args.extend(
-            ["--without-fetch", "--with-tls=openssl", "--enable-auditlog"])
-
-        libpath = ""
-        for path in autotools.library_paths:
-            libpath += "{}:".format(path)
-        
-        # Need to link to -pthread instead of -lpthread for gcc 8 shared=True on CI job
-        libs = ""
-        autotools.libs.remove("pthread") 
-        for lib in autotools.libs:
-            libs += "-l{} ".format(lib)
-        libs += "-pthread "
-        with tools.environment_append({"systemdsystemunitdir": self.package_folder, "LD_LIBRARY_PATH": libpath, "LIBS": libs}):
-            autotools.configure(
-                configure_dir=os.path.join(
-                    self._source_subfolder),
-                args=conf_args)
-        self.run("make depend -j8")
-        autotools.make()
+        autotools = self._configure_autotools()
+        autotools.make(vars=self._configure_vars)
 
     def package(self):
         autotools = AutoToolsBuildEnvironment(self)
-        autotools.install()
-        from shutil import rmtree, copy
-        from glob import glob
-        rm_dirs = ["var", "share", "etc", "lib/pkgconfig"]
-        rm_files = glob(os.path.join(self.package_folder, "lib/*.la"))
-        rm_files.append("slapd.service")
-        for target in rm_dirs:
-            rmtree(
-                os.path.join(
-                    self.package_folder,
-                    target),
-                ignore_errors=False)
-        for target in rm_files:
-            os.remove(os.path.join(
-                self.package_folder,
-                target))
-        licenses_dst = os.path.join(self.package_folder, "licenses")
-        os.mkdir(licenses_dst)
-        copy(
-            os.path.join(
-                self.build_folder,
-                self._source_subfolder,
-                "LICENSE"),
-            licenses_dst)
-        copy(
-            os.path.join(
-                self.build_folder,
-                self._source_subfolder,
-                "COPYRIGHT"),
-            licenses_dst)
+        autotools.install(vars=self._configure_vars)
+        self.copy("LICENSE", dst="licenses", src=self._source_subfolder)
+        self.copy("COPYRIGHT", dst="licenses", src=self._source_subfolder)
+        for folder in ["var", "share", "etc", "lib/pkgconfig", "res"]:
+            tools.rmdir(os.path.join(self.package_folder, folder))
+        tools.remove_files_by_mask(os.path.join(self.package_folder, "lib"), "*.la")
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        bin_path = os.path.join(self.package_folder, "bin")
+        self.env_info.PATH.append(bin_path)
+        self.output.info("Appending PATH environment variable: {}".format(bin_path))
+
+        self.cpp_info.libs = ["ldap", "lber"]
+        if self.settings.os in ["Linux", "FreeBSD"]:
+            self.cpp_info.system_libs = ["pthread"]

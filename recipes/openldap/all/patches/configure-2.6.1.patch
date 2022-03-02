@@ -4,8 +4,8 @@ index 075d847..54c524e 100755
 +++ b/configure
 @@ -18583,18 +18583,18 @@ $as_echo "$ol_cv_pthread_thread" >&6; }
  fi
- 
- 
+
+
 -		# Pthread try link: -lpthread -lmach -lexc -lc_r (ol_cv_pthread_lpthread_lmach_lexc_lc_r)
 +		# Pthread try link: -pthread -lmach -lexc -lc_r (ol_cv_pthread_lpthread_lmach_lexc_lc_r)
  if test "$ol_link_threads" = no ; then
@@ -18,24 +18,24 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthread_lmach_lexc_lc_r+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthread -lmach -lexc -lc_r $LIBS"
 +		LIBS="-pthread -lmach -lexc -lc_r $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -18768,23 +18768,23 @@ fi
  $as_echo "$ol_cv_pthread_lpthread_lmach_lexc_lc_r" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthread_lmach_lexc_lc_r = yes ; then
 -		ol_link_pthreads="-lpthread -lmach -lexc -lc_r"
 +		ol_link_pthreads="-pthread -lmach -lexc -lc_r"
  		ol_link_threads=posix
  	fi
  fi
- 
+
 -		# Pthread try link: -lpthread -lmach -lexc (ol_cv_pthread_lpthread_lmach_lexc)
 +		# Pthread try link: -pthread -lmach -lexc (ol_cv_pthread_lpthread_lmach_lexc)
  if test "$ol_link_threads" = no ; then
@@ -48,25 +48,25 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthread_lmach_lexc+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthread -lmach -lexc $LIBS"
 +		LIBS="-pthread -lmach -lexc $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -18958,24 +18958,24 @@ fi
  $as_echo "$ol_cv_pthread_lpthread_lmach_lexc" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthread_lmach_lexc = yes ; then
 -		ol_link_pthreads="-lpthread -lmach -lexc"
 +		ol_link_pthreads="-pthread -lmach -lexc"
  		ol_link_threads=posix
  	fi
  fi
- 
- 
+
+
 -		# Pthread try link: -lpthread -Wl,-woff,85 (ol_cv_pthread_lib_lpthread_woff)
 +		# Pthread try link: -pthread -Wl,-woff,85 (ol_cv_pthread_lib_lpthread_woff)
  if test "$ol_link_threads" = no ; then
@@ -79,25 +79,25 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lib_lpthread_woff+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthread -Wl,-woff,85 $LIBS"
 +		LIBS="-pthread -Wl,-woff,85 $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -19149,24 +19149,24 @@ fi
  $as_echo "$ol_cv_pthread_lib_lpthread_woff" >&6; }
- 
+
  	if test $ol_cv_pthread_lib_lpthread_woff = yes ; then
 -		ol_link_pthreads="-lpthread -Wl,-woff,85"
 +		ol_link_pthreads="-pthread -Wl,-woff,85"
  		ol_link_threads=posix
  	fi
  fi
- 
- 
+
+
 -		# Pthread try link: -lpthread (ol_cv_pthread_lpthread)
 +		# Pthread try link: -pthread (ol_cv_pthread_lpthread)
  if test "$ol_link_threads" = no ; then
@@ -110,17 +110,17 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthread+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthread $LIBS"
 +		LIBS="-pthread $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -19340,7 +19340,7 @@ fi
  $as_echo "$ol_cv_pthread_lpthread" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthread = yes ; then
 -		ol_link_pthreads="-lpthread"
 +		ol_link_pthreads="-pthread"
@@ -129,8 +129,8 @@ index 075d847..54c524e 100755
  fi
 @@ -19727,18 +19727,18 @@ $as_echo "$ol_cv_pthread_threads" >&6; }
  fi
- 
- 
+
+
 -		# Pthread try link: -lpthreads -lmach -lexc -lc_r (ol_cv_pthread_lpthreads_lmach_lexc_lc_r)
 +		# Pthread try link: -pthreads -lmach -lexc -lc_r (ol_cv_pthread_lpthreads_lmach_lexc_lc_r)
  if test "$ol_link_threads" = no ; then
@@ -143,24 +143,24 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthreads_lmach_lexc_lc_r+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthreads -lmach -lexc -lc_r $LIBS"
 +		LIBS="-pthreads -lmach -lexc -lc_r $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -19912,23 +19912,23 @@ fi
  $as_echo "$ol_cv_pthread_lpthreads_lmach_lexc_lc_r" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthreads_lmach_lexc_lc_r = yes ; then
 -		ol_link_pthreads="-lpthreads -lmach -lexc -lc_r"
 +		ol_link_pthreads="-pthreads -lmach -lexc -lc_r"
  		ol_link_threads=posix
  	fi
  fi
- 
+
 -		# Pthread try link: -lpthreads -lmach -lexc (ol_cv_pthread_lpthreads_lmach_lexc)
 +		# Pthread try link: -pthreads -lmach -lexc (ol_cv_pthread_lpthreads_lmach_lexc)
  if test "$ol_link_threads" = no ; then
@@ -173,24 +173,24 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthreads_lmach_lexc+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthreads -lmach -lexc $LIBS"
 +		LIBS="-pthreads -lmach -lexc $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -20102,23 +20102,23 @@ fi
  $as_echo "$ol_cv_pthread_lpthreads_lmach_lexc" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthreads_lmach_lexc = yes ; then
 -		ol_link_pthreads="-lpthreads -lmach -lexc"
 +		ol_link_pthreads="-pthreads -lmach -lexc"
  		ol_link_threads=posix
  	fi
  fi
- 
+
 -		# Pthread try link: -lpthreads -lexc (ol_cv_pthread_lpthreads_lexc)
 +		# Pthread try link: -pthreads -lexc (ol_cv_pthread_lpthreads_lexc)
  if test "$ol_link_threads" = no ; then
@@ -203,25 +203,25 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lpthreads_lexc+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthreads -lexc $LIBS"
 +		LIBS="-pthreads -lexc $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -20292,24 +20292,24 @@ fi
  $as_echo "$ol_cv_pthread_lpthreads_lexc" >&6; }
- 
+
  	if test $ol_cv_pthread_lpthreads_lexc = yes ; then
 -		ol_link_pthreads="-lpthreads -lexc"
 +		ol_link_pthreads="-pthreads -lexc"
  		ol_link_threads=posix
  	fi
  fi
- 
- 
+
+
 -		# Pthread try link: -lpthreads (ol_cv_pthread_lib_lpthreads)
 +		# Pthread try link: -pthreads (ol_cv_pthread_lib_lpthreads)
  if test "$ol_link_threads" = no ; then
@@ -234,17 +234,17 @@ index 075d847..54c524e 100755
  if ${ol_cv_pthread_lib_lpthreads+:} false; then :
    $as_echo_n "(cached) " >&6
  else
- 
+
  		# save the flags
  		ol_LIBS="$LIBS"
 -		LIBS="-lpthreads $LIBS"
 +		LIBS="-pthreads $LIBS"
- 
+
  		if test "$cross_compiling" = yes; then :
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 @@ -20483,7 +20483,7 @@ fi
  $as_echo "$ol_cv_pthread_lib_lpthreads" >&6; }
- 
+
  	if test $ol_cv_pthread_lib_lpthreads = yes ; then
 -		ol_link_pthreads="-lpthreads"
 +		ol_link_pthreads="-pthreads"
@@ -253,7 +253,7 @@ index 075d847..54c524e 100755
  fi
 @@ -22337,7 +22337,6 @@ $as_echo "$as_me: WARNING: Strong authentication not supported!" >&2;}
  fi
- 
+
  WITH_SYSTEMD=no
 -systemdsystemunitdir=
  ol_link_systemd=no
