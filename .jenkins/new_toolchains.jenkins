@@ -177,13 +177,7 @@ def createReference(Map ctxt, List recipesToBuild) {
 }
 
 node('Linux') {
-<<<<<<< HEAD
-
     cancelPrevious()
-=======
-
-    cancelPrevious()
->>>>>>> czoido/master
 
     List<String> recipes = []
     stage('Compute changes') {
@@ -265,10 +259,7 @@ node('Linux') {
                              withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
                                  createReference([python_host: 'python3',
                                                  shFunction: { data -> sh(data) },
-<<<<<<< HEAD
                                                  shReturnCode: { data -> sh(data, returnStatus: true) },
-=======
->>>>>>> czoido/master
                                                  isWindows: false,
                                                  isInsideDocker: false,
                                                  profileHost: MACOS_PROFILE,
@@ -286,10 +277,7 @@ node('Linux') {
                          stage("${branch.name}") {
                             createReference([python_host: 'C:\\Python39\\python.exe',
                                             shFunction: { data -> bat(data) },
-<<<<<<< HEAD
                                             shReturnCode: { data -> sh(data, returnStatus: true) },
-=======
->>>>>>> czoido/master
                                             isWindows: true,
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
