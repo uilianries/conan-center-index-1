@@ -14,6 +14,8 @@
 __pycache__/
 test_package/__pycache__/
 test_package/build/
+**/test_package/cmake**
+**/test_package/test_output**
 build/
 *.pyc
 *.py[cod]
