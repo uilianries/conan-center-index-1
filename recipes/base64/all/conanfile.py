@@ -2,7 +2,7 @@ import os
 from conan import ConanFile
 from conan.tools.gnu import Autotools, AutotoolsDeps, AutotoolsToolchain
 from conan.tools.cmake import CMake, cmake_layout, CMakeToolchain, CMakeDeps
-from conan.tools.files import get, patch, copy, chdir
+from conan.tools.files import get, patch, copy, chdir, apply_conandata_patches
 from conan.tools.microsoft import is_msvc
 
 
@@ -63,8 +63,7 @@ class Base64Conan(ConanFile):
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
-        for p in self.conan_data["patches"][self.version]:
-            patch(self, **p)
+        apply_conandata_patches(self)
 
     def build(self):
         if is_msvc(self):

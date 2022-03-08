@@ -4,5 +4,5 @@ sources:
     url: https://github.com/aklomp/base64/archive/v0.4.0.tar.gz
 patches:
   "0.4.0":
-    - patch_file: "../patches/make.patch"
-    - patch_file: "../patches/cmake.patch"
+    - patch_file: "patches/make.patch"
+    - patch_file: "patches/cmake.patch"
