@@ -168,11 +168,11 @@ def createReference(Map ctxt, List recipesToBuild) {
         }
     }
     finally {
-        stage("CleanWS") {
+        //stage("CleanWS") {
             cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true,
                 cleanWhenSuccess: true, cleanWhenUnstable: true, disableDeferredWipeout: true, deleteDirs: true,
                 notFailBuild: true)
-        }
+        //}
     }
 }
 

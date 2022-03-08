@@ -10,7 +10,7 @@ class DefaultNameConan(ConanFile):
     def layout(self):
         basic_layout(self)
 
-    def requirements(self):
+    def build_requirements(self):
         self.tool_requires(self.tested_reference_str)
 
     def test(self):
