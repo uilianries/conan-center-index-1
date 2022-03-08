@@ -278,7 +278,7 @@ node('Linux') {
                          stage("${branch.name}") {
                             createReference([python_host: 'C:\\Python39\\python.exe',
                                             shFunction: { data -> bat(data) },
-                                            shReturnCode: { data -> sh(data, returnStatus: true) },
+                                            shReturnCode: { data -> bat(data, returnStatus: true) },
                                             isWindows: true,
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
