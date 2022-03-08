@@ -242,7 +242,7 @@ node('Linux') {
                         docker.image(LINUX_CONTAINER).inside {
                             createReference([python_host: 'python3',
                                             shFunction: { data -> sh(data) },
-                                            shReturnCode: { data -> sh(data, returnStatus: true) },
+                                            shReturnCode: { data -> sh(script: data, returnStatus: true) },
                                             isWindows: false,
                                             isInsideDocker: true,
                                             profileHost: LINUX_PROFILE,
@@ -260,7 +260,7 @@ node('Linux') {
                              withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
                                  createReference([python_host: 'python3',
                                                  shFunction: { data -> sh(data) },
-                                                 shReturnCode: { data -> sh(data, returnStatus: true) },
+                                                 shReturnCode: { data -> sh(script: data, returnStatus: true) },
                                                  isWindows: false,
                                                  isInsideDocker: false,
                                                  profileHost: MACOS_PROFILE,
@@ -278,7 +278,7 @@ node('Linux') {
                          stage("${branch.name}") {
                             createReference([python_host: 'C:\\Python39\\python.exe',
                                             shFunction: { data -> bat(data) },
-                                            shReturnCode: { data -> bat(data, returnStatus: true) },
+                                            shReturnCode: { data -> bat(script: data, returnStatus: true) },
                                             isWindows: true,
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
