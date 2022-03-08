@@ -126,15 +126,7 @@ def createReference(Map ctxt, List recipesToBuild) {
             ctxt.shFunction('cmake --version')
             ctxt.shFunction('conan --version')
             ctxt.shFunction("conan remote remove conancenter")
-            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL} --index 0")
-            withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
-                if (ctxt.isWindows) {
-                    ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
-                }
-                else {
-                    ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
-                }
-            }
+            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
         }
 
         def recipesToUpload = []
@@ -159,6 +151,14 @@ def createReference(Map ctxt, List recipesToBuild) {
                     }
             }
             if (ctxt.upload) {
+                withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                    if (ctxt.isWindows) {
+                        ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
+                    }
+                    else {
+                        ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
+                    }
+                }
                 if (!recipesToUpload.isEmpty()) {
                     for (recipe in recipesToUpload) {
                         ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
