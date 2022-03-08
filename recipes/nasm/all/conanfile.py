@@ -2,7 +2,7 @@ import os
 import shutil
 
 from conan import ConanFile
-from conan.tools.files import get, chdir, patch, replace_in_file, copy
+from conan.tools.files import get, chdir, apply_conandata_patches, replace_in_file, copy
 from conan.tools.layout import basic_layout
 from conan.tools.microsoft.visual import VCVars, is_msvc
 from conan.tools.gnu import AutotoolsToolchain, Autotools
@@ -55,9 +55,7 @@ class NASMConan(ConanFile):
         del self.info.settings.compiler
 
     def build(self):
-        for _p in self.conan_data.get("patches", {}).get(self.version, []):
-            patch_file = os.path.join(self.base_source_folder, _p["patch_file"])
-            patch(self, patch_file=patch_file)
+        apply_conandata_patches(self)
 
         if is_msvc(self):
             with chdir(self, self.source_folder):
