@@ -242,6 +242,7 @@ node('Linux') {
                         docker.image(LINUX_CONTAINER).inside {
                             createReference([python_host: 'python3',
                                             shFunction: { data -> sh(data) },
+                                            shReturnCode: { data -> sh(data, returnStatus: true) },
                                             isWindows: false,
                                             isInsideDocker: true,
                                             profileHost: LINUX_PROFILE,
