@@ -4,7 +4,7 @@ from conan.tools.build import cross_building
 from conan.tools.layout import basic_layout
 
 
-class DefaultNameConan(ConanFile):
+class TestPackage(ConanFile):
     settings = "os", "arch"
 
     def layout(self):
