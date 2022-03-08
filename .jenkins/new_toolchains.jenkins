@@ -125,9 +125,16 @@ def createReference(Map ctxt, List recipesToBuild) {
         envInside(ctxt) {
             ctxt.shFunction('cmake --version')
             ctxt.shFunction('conan --version')
-            // ctxt.shFunction('conan config init --force')
-            // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
-            // ctxt.shFunction('conan config set hooks.conan-center')
+            ctxt.shFunction("conan remote remove conancenter")
+            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL} --index 0")
+            withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                if (ctxt.isWindows) {
+                    ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
+                }
+                else {
+                    ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
+                }
+            }
         }
 
         def recipesToUpload = []
@@ -153,15 +160,6 @@ def createReference(Map ctxt, List recipesToBuild) {
             }
             if (ctxt.upload) {
                 if (!recipesToUpload.isEmpty()) {
-                    ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
-                    withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
-                        if (ctxt.isWindows) {
-                            ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
-                        }
-                        else {
-                            ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
-                        }
-                    }
                     for (recipe in recipesToUpload) {
                         ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
                     }
