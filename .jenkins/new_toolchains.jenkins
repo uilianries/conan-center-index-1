@@ -119,60 +119,57 @@ def envCreate(Map ctxt) {
 
 def createReference(Map ctxt, List recipesToBuild) {
     try {
-        stage('Checkout SCM') {
-            checkout scm
-        }
+        checkout scm
 
-        stage('Configure environment') {
-            envCreate(ctxt)
-            envInside(ctxt) {
-                ctxt.shFunction('cmake --version')
-                ctxt.shFunction('conan --version')
-                // ctxt.shFunction('conan config init --force')
-                // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
-                // ctxt.shFunction('conan config set hooks.conan-center')
-            }
+        envCreate(ctxt)
+        envInside(ctxt) {
+            ctxt.shFunction('cmake --version')
+            ctxt.shFunction('conan --version')
+            // ctxt.shFunction('conan config init --force')
+            // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
+            // ctxt.shFunction('conan config set hooks.conan-center')
         }
 
         for (recipe in recipesToBuild) {
-            stage("Create ${recipe.reference}") {
-                envInside(ctxt) {
-                    // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
-                    writeFile(file: 'pr_host', text: ctxt.profileHost)
-                    if (ctxt.branch.name.contains('1.X')) {
-                        ctxt.shFunction("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
+            envInside(ctxt) {
+                // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
+                writeFile(file: 'pr_host', text: ctxt.profileHost)
+                if (ctxt.branch.name.contains('1.X')) {
+                    def ret = ctxt.shReturnCode("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
+                    if(ret !=0 && ret !=6){
+                        error "The conan create failed with code: ${ret}"
                     }
-                    else {
-                        ctxt.shFunction("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
-                        if (ctxt.upload) {
-                            ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
-                            withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
-                                if (ctxt.isWindows) {
-                                    ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
-                                }
-                                else {
-                                    ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
-                                }
+                }
+                else {
+                    def ret = ctxt.shReturnCode("conan create ${recipe.folder} --name ${recipe.name} --version ${recipe.version} -pr:h=pr_host -pr:b=pr_host")
+                    if(ret !=0 && ret !=6){
+                        error "The conan create failed!"
+                    }
+                    if (ctxt.upload) {
+                        ctxt.shFunction("conan remote add conancenterv2 ${ART_URL}")
+                        withCredentials([usernamePassword(credentialsId: 'artifactory-conanv2beta', usernameVariable: 'ARTIFACTORY_USER', passwordVariable: 'ARTIFACTORY_PASSWORD')]) {
+                            if (ctxt.isWindows) {
+                                ctxt.shFunction('conan remote login conancenterv2 %ARTIFACTORY_USER% -p %ARTIFACTORY_PASSWORD%')
                             }
-                            ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
+                            else {
+                                ctxt.shFunction('conan remote login conancenterv2 $ARTIFACTORY_USER -p $ARTIFACTORY_PASSWORD')
+                            }
                         }
+                        ctxt.shFunction("conan upload ${recipe.name}/${recipe.version} -r conancenterv2 -c")
                     }
                 }
             }
         }
     }
     finally {
-        stage("CleanWS") {
-            cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true,
-                cleanWhenSuccess: true, cleanWhenUnstable: true, disableDeferredWipeout: true, deleteDirs: true,
-                notFailBuild: true)
-        }
+        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true,
+            cleanWhenSuccess: true, cleanWhenUnstable: true, disableDeferredWipeout: true, deleteDirs: true,
+            notFailBuild: true)
     }
 }
 
 node('Linux') {
-    
-    cancelPrevious() 
+    cancelPrevious()
 
     List<String> recipes = []
     stage('Compute changes') {
@@ -237,6 +234,7 @@ node('Linux') {
                         docker.image(LINUX_CONTAINER).inside {
                             createReference([python_host: 'python3',
                                             shFunction: { data -> sh(data) },
+                                            shReturnCode: { data -> sh(script: data, returnStatus: true) },
                                             isWindows: false,
                                             isInsideDocker: true,
                                             profileHost: LINUX_PROFILE,
@@ -254,6 +252,7 @@ node('Linux') {
                              withEnv(['PATH+EXTRA=/usr/local/bin']) { // Required to find CMake
                                  createReference([python_host: 'python3',
                                                  shFunction: { data -> sh(data) },
+                                                 shReturnCode: { data -> sh(script: data, returnStatus: true) },
                                                  isWindows: false,
                                                  isInsideDocker: false,
                                                  profileHost: MACOS_PROFILE,
@@ -271,6 +270,7 @@ node('Linux') {
                          stage("${branch.name}") {
                             createReference([python_host: 'C:\\Python39\\python.exe',
                                             shFunction: { data -> bat(data) },
+                                            shReturnCode: { data -> bat(script: data, returnStatus: true) },
                                             isWindows: true,
                                             isInsideDocker: false,
                                             profileHost: WINDOWS_PROFILE,
