@@ -119,11 +119,11 @@ def envCreate(Map ctxt) {
 
 def createReference(Map ctxt, List recipesToBuild) {
     try {
-        stage('Checkout SCM') {
+        //stage('Checkout SCM') {
             checkout scm
-        }
+        //}
 
-        stage('Configure environment') {
+        //stage('Configure environment') {
             envCreate(ctxt)
             envInside(ctxt) {
                 ctxt.shFunction('cmake --version')
@@ -132,17 +132,17 @@ def createReference(Map ctxt, List recipesToBuild) {
                 // ctxt.shFunction('conan config install https://github.com/conan-io/hooks.git -sf hooks -tf hooks')
                 // ctxt.shFunction('conan config set hooks.conan-center')
             }
-        }
+        //}
 
         for (recipe in recipesToBuild) {
-            stage("Create ${recipe.reference}") {
+            //stage("Create ${recipe.reference}") {
                 envInside(ctxt) {
                     // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
                     writeFile(file: 'pr_host', text: ctxt.profileHost)
                     if (ctxt.branch.name.contains('1.X')) {
                         def ret = ctxt.shReturnCode("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
                         if(ret !=0 && ret !=6){
-                            error "The conan create failed!"
+                            error "The conan create failed with code: ${ret}"
                         }
                     }
                     else {
@@ -164,7 +164,7 @@ def createReference(Map ctxt, List recipesToBuild) {
                         }
                     }
                 }
-            }
+            //}
         }
     }
     finally {
