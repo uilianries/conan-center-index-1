@@ -1,5 +1,8 @@
 import os
-from conans import ConanFile, tools
+import shutil
+from conan import ConanFile
+from conan.tools.files import get, copy
+from conan.tools.layout import basic_layout
 from conans.errors import ConanInvalidConfiguration
 
 
@@ -13,6 +16,9 @@ class StrawberryperlConan(ConanFile):
     settings = "os", "arch"
     short_paths = True
 
+    def layout(self):
+        basic_layout(self)
+
     def configure(self):
         if self.settings.os != "Windows":
             raise ConanInvalidConfiguration("Only windows supported for Strawberry Perl.")
@@ -21,14 +27,15 @@ class StrawberryperlConan(ConanFile):
         arch = str(self.settings.arch)
         url = self.conan_data["sources"][self.version]["url"][arch]
         sha256 = self.conan_data["sources"][self.version]["sha256"][arch]
-        tools.get(url, sha256=sha256)
+        get(self, url, sha256=sha256)
 
     def package(self):
-        self.copy(pattern="License.rtf*", dst="licenses", src="licenses")
-        self.copy(pattern="*", src=os.path.join("perl", "bin"), dst="bin")
-        self.copy(pattern="*", src=os.path.join("perl", "lib"), dst="lib")
-        self.copy(pattern="*", src=os.path.join("perl", "vendor", "lib"), dst="lib")
-        tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
+        copy(self, "License.rtf*", "licenses", os.path.join(self.package_folder, "licenses"))
+        copy(self, "*", os.path.join("perl", "bin"), os.path.join(self.package_folder, "bin"))
+        copy(self, "*", os.path.join("perl", "lib"), os.path.join(self.package_folder, "lib"))
+        copy(self, "*", os.path.join("perl", "vendor", "lib"), os.path.join(self.package_folder, "lib"))
+        if os.path.exists(os.path.join(self.package_folder, "lib", "pkgconfig")):
+            shutil.rmtree(os.path.join(self.package_folder, "lib", "pkgconfig"))
 
     def package_info(self):
         self.cpp_info.libdirs = []
@@ -36,6 +43,5 @@ class StrawberryperlConan(ConanFile):
 
         bin_path = os.path.join(self.package_folder, "bin")
         self.output.info("Appending PATH environment variable: %s" % bin_path)
-        self.env_info.PATH.append(bin_path)
-
-        self.user_info.perl = os.path.join(self.package_folder, "bin", "perl.exe").replace("\\", "/")
+        self.buildenv_info.prepend_path("PATH", bin_path)
+        self.user_info.perl = os.path.join(bin_path, "perl.exe").replace("\\", "/")
