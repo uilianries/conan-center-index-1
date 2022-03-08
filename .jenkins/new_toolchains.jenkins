@@ -135,7 +135,7 @@ def createReference(Map ctxt, List recipesToBuild) {
                     // ctxt.shFunction("conan info ${recipe.folder} --profile=default")
                     writeFile(file: 'pr_host', text: ctxt.profileHost)
                     if (ctxt.branch.name.contains('1.X')) {
-                        def ret = ctxt.shReturnCode("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host")
+                        def ret = ctxt.shReturnCode("conan create ${recipe.folder} ${recipe.name}/${recipe.version}@ -pr:h=pr_host -pr:b=pr_host --build=missing")
                         if(ret !=0 && ret !=6){
                             error "The conan create failed with code: ${ret}"
                         }
