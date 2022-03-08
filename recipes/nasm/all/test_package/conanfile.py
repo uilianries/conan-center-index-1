@@ -6,7 +6,7 @@ from conan.tools.build import cross_building
 class TestPackageConan(ConanFile):
     settings = "os", "arch"
 
-    def requirements(self):
+    def build_requirements(self):
         self.tool_requires(self.tested_reference_str)
 
     def test(self):

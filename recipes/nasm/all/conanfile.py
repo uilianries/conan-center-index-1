@@ -56,7 +56,8 @@ class NASMConan(ConanFile):
 
     def build(self):
         for _p in self.conan_data.get("patches", {}).get(self.version, []):
-            patch(self, **_p)
+            patch_file = os.path.join(self.base_source_folder, _p["patch_file"])
+            patch(self, patch_file=patch_file)
         if self.settings.compiler == "Visual Studio":
             with chdir(self, self.source_folder):
                 self.run("nmake /f {} {}".format(os.path.join("Mkfiles", "msvc.mak"), " ".join("{}=\"{}\"".format(k, v) for k, v in autotools.vars.items())))
@@ -75,9 +76,9 @@ class NASMConan(ConanFile):
             autotools.make()
 
     def package(self):
-        copy(self, pattern="LICENSE", src=self.source_folder, dst="licenses")
+        copy(self, "LICENSE", self.source_folder, os.path.join(self.package_folder, "licenses"))
         if self.settings.compiler == "Visual Studio":
-            copy(self, pattern="*.exe", src=self.source_folder, dst="bin", keep_path=False)
+            copy(self, "*.exe", self.source_folder, os.path.join(self.package_folder, "bin"), keep_path=False)
         else:
             autotools = Autotools(self)
             autotools.install()
