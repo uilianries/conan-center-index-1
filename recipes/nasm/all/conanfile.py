@@ -4,10 +4,10 @@ import shutil
 from conan import ConanFile
 from conan.tools.files import get, chdir, patch, replace_in_file, copy
 from conan.tools.layout import basic_layout
-from conan.tools.microsoft.visual import VCVars
+from conan.tools.microsoft.visual import VCVars, is_msvc
 from conan.tools.gnu import AutotoolsToolchain, Autotools
 
-required_conan_version = ">=1.33.0"
+required_conan_version = ">=1.46.0"
 
 
 class NASMConan(ConanFile):
@@ -58,9 +58,11 @@ class NASMConan(ConanFile):
         for _p in self.conan_data.get("patches", {}).get(self.version, []):
             patch_file = os.path.join(self.base_source_folder, _p["patch_file"])
             patch(self, patch_file=patch_file)
-        if self.settings.compiler == "Visual Studio":
+
+        if is_msvc(self):
             with chdir(self, self.source_folder):
-                self.run("nmake /f {} {}".format(os.path.join("Mkfiles", "msvc.mak"), " ".join("{}=\"{}\"".format(k, v) for k, v in autotools.vars.items())))
+                #self.run("nmake /f {} {}".format(os.path.join("Mkfiles", "msvc.mak"), " ".join("{}=\"{}\"".format(k, v) for k, v in autotools.vars.items())))
+                self.run("nmake /f {}".format(os.path.join("Mkfiles", "msvc.mak")))
                 shutil.copy("nasm.exe", "nasmw.exe")
                 shutil.copy("ndisasm.exe", "ndisasmw.exe")
         else:
