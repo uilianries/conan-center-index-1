@@ -6,7 +6,7 @@ properties([
     ]),
 ]) 
 
-List<String> recipesToBuild = params.recipes.split(',')
+List<String> recipesToBuild = params.recipes.tokenize(',')
 
 RAISE_HOOKS = true
 ART_URL = 'https://conanv2beta.jfrog.io/artifactory/api/conan/conan'
@@ -230,9 +230,10 @@ node('Linux') {
                     recipesToBuild.add(matcher[0][1] as String)
                 }
             }
-            removeDuplicates(recipesToBuild)
         }
     }
+
+    removeDuplicates(recipesToBuild)
 
     echo "Recipes to build:\n - ${ recipesToBuild.collect({ "$it" }).join('\n - ')}"
 
