@@ -34,7 +34,7 @@ class GnuTLSConan(ConanFile):
         tools.get(**self.conan_data["sources"][self.version], strip_root=True, destination=self._source_subfolder)
 
     def requirements(self):
-        self.requires("nettle/3.5")
+        self.requires("nettle/3.6")
         self.requires("gmp/6.2.1")
         self.requires("libiconv/1.16")
 
@@ -49,6 +49,19 @@ class GnuTLSConan(ConanFile):
                           "--disable-option-checking",
                           "--without-p11-kit",
                           "--without-idn",
+                          "--disable-srp-authentication",
+                          "--disable-psk-authentication",
+                          "--disable-anon-authentication",
+                          "--disable-dhe",
+                          "--disable-ecdhe",
+                          "--disable-openssl-compatibility",
+                          "--disable-dtls-srtp-support",
+                          "--disable-alpn-support",
+                          "--disable-heartbeat-support",
+                          "--disable-libdane",
+                          "--without-p11-kit",
+                          "--without-tpm",
+                          "--without-zlib",
                           "--with-included-libtasn1",
                           "--with-included-unistring",
                           "--with-libiconv-prefix={}".format(self.deps_cpp_info["libiconv"].rootpath)]
