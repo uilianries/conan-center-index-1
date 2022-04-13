@@ -5,7 +5,7 @@ from conan.tools.microsoft import is_msvc
 from conan.tools.scm import Version
 import os
 
-required_conan_version = ">=1.43.0"
+required_conan_version = ">=1.45.0"
 
 
 class ZlibConan(ConanFile):
@@ -27,7 +27,7 @@ class ZlibConan(ConanFile):
         "fPIC": True,
     }
 
-    generators = "cmake_find_package_multi"
+    generators = "CMakeDeps", "CMakeToolchain"
 
     @property
     def _source_subfolder(self):
