@@ -33,7 +33,7 @@ class ZlibConan(ConanFile):
         tc.variables["SKIP_INSTALL_LIBRARIES"] = False
         tc.variables["SKIP_INSTALL_HEADERS"] = False
         tc.variables["SKIP_INSTALL_FILES"] = True
-        tc.generate()        
+        tc.generate()
 
     def layout(self):
         cmake_layout(self)
@@ -67,9 +67,6 @@ class ZlibConan(ConanFile):
         for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
             # !!!! This is not easy to understand, the patches are un the base source folder, not an easy access. Here the current dir is source_folder.
             patch(self, patch_file=os.path.join(self.folders.base_source, _patch["patch_file"]))
-
-        # https://github.com/madler/zlib/issues/268
-        replace_in_file(self, os.path.join(self.source_folder, 'gzguts.h'), '#if defined(_WIN32) || defined(__CYGWIN__)', '#if defined(_WIN32) || defined(__MINGW32__)')
 
         is_apple_clang12 = self.settings.compiler == "apple-clang" and Version(str(self.settings.compiler.version)) >= "12.0"
         if not is_apple_clang12:
