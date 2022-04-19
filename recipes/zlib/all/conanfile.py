@@ -3,7 +3,6 @@ from conan.tools.scm import Version
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
 from conan.tools.files import get, patch, rename, chdir, load, save, copy
 from conan.tools.files import replace_in_file
-from conan.tools.microsoft import is_msvc
 import os
 
 
@@ -39,6 +38,10 @@ class ZlibConan(ConanFile):
     def layout(self):
         cmake_layout(self)
         # self.folders.source = "source_subfolder"
+
+    @property
+    def _is_msvc(self):
+        return str(self.settings.compiler) in ["Visual Studio", "msvc"]
 
     def export_sources(self):
         for _patch in self.conan_data.get("patches", {}).get(str(self.version), []):
@@ -91,11 +94,11 @@ class ZlibConan(ConanFile):
             suffix = "d" if self.settings.build_type == "Debug" else ""
 
             if self.options.shared:
-                if is_msvc(self) and suffix:
+                if self._is_msvc and suffix:
                     current_lib = os.path.join(lib_path, "zlib%s.lib" % suffix)
                     rename(self, current_lib, os.path.join(lib_path, "zlib.lib"))
             else:
-                if is_msvc(self):
+                if self._is_msvc:
                     current_lib = os.path.join(lib_path, "zlibstatic%s.lib" % suffix)
                     rename(self, current_lib, os.path.join(lib_path, "zlib.lib"))
                 elif self.settings.compiler in ("clang", "gcc", ):
