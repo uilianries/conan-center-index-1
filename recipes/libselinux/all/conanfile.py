@@ -12,11 +12,10 @@ class LibSELinuxConan(ConanFile):
         "of utilities with enhanced security functionality designed to add "
         "mandatory access controls to Linux"
     )
-    topics = ("selinux", "security-enhanced linux")
+    topics = ("selinux", "security-enhanced", "linux")
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://github.com/SELinuxProject/selinux"
-    license = "Unlicense"  # This library (libselinux) is public domain software, i.e. not copyrighted
-
+    license = "Unlicense"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
@@ -38,7 +37,7 @@ class LibSELinuxConan(ConanFile):
         del self.settings.compiler.cppstd
 
     def requirements(self):
-        self.requires("pcre2/10.37")
+        self.requires("pcre2/10.40")
 
     def validate(self):
         if self.settings.os != "Linux":
