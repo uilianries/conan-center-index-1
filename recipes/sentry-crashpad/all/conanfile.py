@@ -5,9 +5,11 @@ from conan.tools.scm import Version
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import get, apply_conandata_patches, copy, rmdir, rm, replace_in_file
 from conan.tools.apple.apple import is_apple_os
+from conan.tools.build import check_min_cppstd
+from conan.tools.microsoft import is_msvc_static_runtime
 from conan.errors import ConanInvalidConfiguration
 
-required_conan_version = ">=1.43.0"
+required_conan_version = ">=1.50.0"
 
 
 class SentryCrashpadConan(ConanFile):
@@ -16,7 +18,7 @@ class SentryCrashpadConan(ConanFile):
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://github.com/getsentry/sentry-native"
     license = "Apache-2.0"
-    topics = ("crashpad", "error-reporting", "crash-reporting")
+    topics = ("error-reporting", "crash-reporting", "crashpad", "breakpad")
 
     provides = "crashpad", "mini_chromium"
 
@@ -24,10 +26,14 @@ class SentryCrashpadConan(ConanFile):
     options = {
         "fPIC": [True, False],
         "with_tls": ["openssl", False],
+        "shared": [True, False],
+        "backend": [None, 'inproc', 'breakpad', 'crashpad']
     }
     default_options = {
         "fPIC": True,
         "with_tls": "openssl",
+        "shared": False,
+        "backend": "crashpad"
     }
 
     short_paths = True
@@ -40,6 +46,7 @@ class SentryCrashpadConan(ConanFile):
     def _minimum_compilers_version(self):
         return {
             "Visual Studio": "15" if Version(self.version) < "0.4.16" else "16",
+            "msvc": "1913",
             "gcc": "6",
             "clang": "3.4",
             "apple-clang": "5.1",
@@ -56,17 +63,29 @@ class SentryCrashpadConan(ConanFile):
         if self.settings.os not in ("Linux", "Android") or Version(self.version) < "0.4":
             del self.options.with_tls
 
+    def configure(self):
+        if self.options.shared:
+            del self.options.fPIC
+
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["CRASHPAD_ENABLE_INSTALL"] = True
         tc.variables["CRASHPAD_ENABLE_INSTALL_DEV"] = True
         tc.variables["CRASHPAD_ZLIB_SYSTEM"] = True
+        tc.variables["SENTRY_BUILD_SHARED_LIBS"] = self.options.shared
+        tc.variables["SENTRY_PIC"] = self.options.get_safe("fPIC", True)
+        tc.variables["SENTRY_BUILD_TESTS"] = False
+        tc.variables["SENTRY_BUILD_EXAMPLES"] = False
+        tc.variables["SENTRY_BUILD_RUNTIMESTATIC"] = is_msvc_static_runtime(self)
+        tc.variables["SENTRY_TRANSPORT"] = "curl"
+        tc.variables["BACKEND"] = str(self.options.backend).lower()
+        tc.variables["SENTRY_FOLDER"] = self.source_folder
         tc.generate()
         tc = CMakeDeps(self)
         tc.generate()
 
     def layout(self):
-        cmake_layout(self)
+        cmake_layout(self, src_folder="src")
 
     def build_requirements(self):
         if self._is_mingw:
@@ -74,14 +93,15 @@ class SentryCrashpadConan(ConanFile):
 
     def requirements(self):
         self.requires("zlib/1.2.12")
+        self.requires("libcurl/7.84.0")
         if self.options.get_safe("with_tls"):
-            self.requires("openssl/1.1.1n")
+            self.requires("openssl/1.1.1q")
 
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):
             # Set as required in crashpad CMake file.
             # See https://github.com/getsentry/crashpad/blob/71bcaad4cf30294b8de1bfa02064ab629437163b/CMakeLists.txt#L67
-            tools.check_min_cppstd(self, 14)
+            check_min_cppstd(self, 14)
 
         minimum_version = self._minimum_compilers_version.get(str(self.settings.compiler), False)
         if not minimum_version:
@@ -193,11 +213,16 @@ class SentryCrashpadConan(ConanFile):
 
         # tools
         self.cpp_info.components["crashpad_tools"].set_property("cmake_target_name", "crashpad::tools")
-        self.cpp_info.components["crashpad_tools"].libs = ["crashpad_tools"]
+        if Version(self.version) < "0.5":
+            self.cpp_info.components["crashpad_tools"].libs = ["crashpad_tools"]
 
+        # TODO: Remove after Conan 2.0
         bin_path = os.path.join(self.package_folder, "bin")
         self.output.info("Appending PATH environment variable: {}".format(bin_path))
         self.env_info.PATH.append(bin_path)
+
+        self.buildenv_info.append("PATH", bin_path)
+        self.runenv_info.append("PATH", bin_path)
 
         # TODO: to remove in conan v2 once cmake_find_package* generators removed
         self.cpp_info.names["cmake_find_package"] = "crashpad"
