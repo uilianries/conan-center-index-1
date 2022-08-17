@@ -1,8 +1,12 @@
-from conans import ConanFile, tools, CMake
-from conans.errors import ConanInvalidConfiguration
+from conan import ConanFile
+from conan.tools.files import apply_conandata_patches, rmdir, get, copy
+from conan.tools.scm import Version
+from conan.errors import ConanInvalidConfiguration
+from conans import CMake
 import os
 
-required_conan_version = ">=1.43.0"
+
+required_conan_version = ">=1.50.0"
 
 
 class CivetwebConan(ConanFile):
@@ -62,7 +66,7 @@ class CivetwebConan(ConanFile):
 
     @property
     def _has_zlib_option(self):
-        return tools.Version(self.version) >= "1.15"
+        return Version(self.version) >= "1.15"
 
     def export_sources(self):
         self.copy("CMakeLists.txt")
@@ -95,7 +99,7 @@ class CivetwebConan(ConanFile):
             raise ConanInvalidConfiguration("ssl_dynamic_loading requires shared openssl")
 
     def source(self):
-        tools.get(**self.conan_data["sources"][self.version],
+        get(self, **self.conan_data["sources"][self.version],
                   destination=self._source_subfolder, strip_root=True)
 
     def _configure_cmake(self):
@@ -104,7 +108,7 @@ class CivetwebConan(ConanFile):
         self._cmake = CMake(self)
 
         if self.options.with_ssl:
-            openssl_version = tools.Version(self.deps_cpp_info["openssl"].version[:-1])
+            openssl_version = Version(self.deps_cpp_info["openssl"].version[:-1])
             self._cmake.definitions["CIVETWEB_ENABLE_SSL"] = self.options.with_ssl
             self._cmake.definitions["CIVETWEB_ENABLE_SSL_DYNAMIC_LOADING"] = self.options.ssl_dynamic_loading
             self._cmake.definitions["CIVETWEB_SSL_OPENSSL_API_1_0"] = openssl_version.minor == "0"
@@ -132,16 +136,15 @@ class CivetwebConan(ConanFile):
         return self._cmake
 
     def build(self):
-        for patch in self.conan_data.get("patches", {}).get(self.version, []):
-            tools.patch(**patch)
+        apply_conandata_patches(self)
         cmake = self._configure_cmake()
         cmake.build()
 
     def package(self):
-        self.copy(os.path.join(self._source_subfolder, "LICENSE.md"), dst="licenses")
+        copy(self, "LICENSE.md", src=self._source_subfolder, dst=os.path.join(self.package_folder, "licenses"))
         cmake = self._configure_cmake()
         cmake.install()
-        tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
+        rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
         bin_folder = os.path.join(self.package_folder, "bin")
         for bin_file in os.listdir(bin_folder):
             if not bin_file.startswith("civetweb"):
