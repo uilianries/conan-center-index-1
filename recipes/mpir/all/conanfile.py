@@ -210,7 +210,7 @@ class MpirConan(ConanFile):
         if self.options.get_safe("enable_cxx"):
             self.cpp_info.libs.append("mpirxx")
         self.cpp_info.libs.append("mpir")
-        if self.options.enable_gmpcompat and not self._is_msvc:
+        if self.options.enable_gmpcompat and not is_msvc(self):
             if self.options.get_safe("enable_cxx"):
                 self.cpp_info.libs.append("gmpxx")
             self.cpp_info.libs.append("gmp")
