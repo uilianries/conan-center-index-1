@@ -5,7 +5,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 from conan.tools.build import check_min_cppstd
 from conan.tools.files import get, rm, save, apply_conandata_patches, copy
 from conan.errors import ConanInvalidConfiguration
-import os
+from os.path import join
 import textwrap
 
 
@@ -48,10 +48,10 @@ class TensorflowLiteConan(ConanFile):
     @property
     def _compilers_minimum_version(self):
         return {
-            "gcc": "5",
-            "Visual Studio": "14",
+            "gcc": "8",
+            "Visual Studio": "15.8",
+            "clang": "5",
             "msvc": "1900",
-            "clang": "3.4",
             "apple-clang": "5.1",
         }
 
@@ -130,7 +130,7 @@ class TensorflowLiteConan(ConanFile):
     def build(self):
         apply_conandata_patches(self)
         cmake = CMake(self)
-        cmake.configure(build_script_folder=os.path.join("tensorflow", "lite"))
+        cmake.configure(build_script_folder=join("tensorflow", "lite"))
         cmake.build()
 
     @staticmethod
@@ -147,19 +147,17 @@ class TensorflowLiteConan(ConanFile):
 
     @property
     def _module_file(self):
-        return os.path.join("lib", "cmake", f"conan-official-{self.name}-targets.cmake")
+        return join("lib", "cmake", f"conan-official-{self.name}-targets.cmake")
 
     def package(self):
-        copy(self, "LICENSE", dst=os.path.join(self.package_folder, "licenses"), src=self.source_folder)
-        copy(self, "*.h", dst=os.path.join(self.package_folder, "include", "tensorflow", "lite"), src=os.path.join(self.source_folder, "tensorflow", "lite"))
-        copy(self, "*.a", dst=os.path.join(self.package_folder, "lib"), src=os.path.join(self.build_folder))
-        copy(self, "*.so*", dst=os.path.join(self.package_folder, "lib"), src=os.path.join(self.build_folder))
-        copy(self, "*.dylib*", dst=os.path.join(self.package_folder, "lib"), src=os.path.join(self.build_folder))
-        copy(self, "*.lib", dst=os.path.join(self.package_folder, "lib"), src=os.path.join(self.build_folder), keep_path=False)
-        copy(self, "*.dll*", dst=os.path.join(self.package_folder, "lib"), src=os.path.join(self.build_folder), keep_path=False)
-        if self.settings.build_type == "Debug":
-            rm(self, "*.pdb", self.package_folder)
-        self._create_cmake_module_alias_target(self, os.path.join(self.package_folder, self._module_file))
+        copy(self, "LICENSE", self.source_folder, join(self.package_folder, "licenses"))
+        copy(self, "*.h", join(self.source_folder, "tensorflow", "lite"), join(self.package_folder, "include", "tensorflow", "lite"))
+        copy(self, "*.a", self.build_folder, join(self.package_folder, "lib"))
+        copy(self, "*.so*", self.build_folder, join(self.package_folder, "lib"))
+        copy(self, "*.dylib*", self.build_folder, join(self.package_folder, "lib"))
+        copy(self, "*.lib", self.build_folder, join(self.package_folder, "lib"), keep_path=False)
+        copy(self, "*.dll*", self.build_folder, join(self.package_folder, "lib"), keep_path=False)
+        self._create_cmake_module_alias_target(self, join(self.package_folder, self._module_file))
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "tensorflowlite")
