@@ -3,7 +3,7 @@ from conan.tools.scm import Version
 from conan.tools.env import VirtualBuildEnv
 from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 from conan.tools.build import check_min_cppstd
-from conan.tools.files import get, rm, save, collect_libs, apply_conandata_patches, copy
+from conan.tools.files import get, rm, save, apply_conandata_patches, copy
 from conan.errors import ConanInvalidConfiguration
 import os
 import textwrap
@@ -177,6 +177,6 @@ class TensorflowLiteConan(ConanFile):
             defines.append("TFLITE_WITH_RUY")
 
         self.cpp_info.defines = defines
-        self.cpp_info.libs = collect_libs(self)
+        self.cpp_info.libs = ["tensorflow-lite"]
         if self.settings.os in ["Linux", "FreeBSD"]:
             self.cpp_info.system_libs.append("dl")
