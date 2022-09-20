@@ -34,6 +34,10 @@ class CycloneDDSConan(ConanFile):
 
     short_paths = True
 
+    @property
+    def _min_cppstd(self):
+        return 14
+
     # in case the project requires C++14/17/20/... the minimum compiler version should be listed
     @property
     def _compilers_minimum_version(self):
@@ -73,9 +77,6 @@ class CycloneDDSConan(ConanFile):
         self.tool_requires("cmake/3.16.2")
 
     def validate(self):
-        compiler = self.info.settings.compiler
-        version = scm.Version(self.info.settings.compiler.version)
-
         if self.options.enable_security and not self.options.shared:
             raise ConanInvalidConfiguration(f"{self.ref} currently do not support"\
                                             "static build and security on")
@@ -84,11 +85,11 @@ class CycloneDDSConan(ConanFile):
             raise ConanInvalidConfiguration(f"{self.ref} is not (yet) supported"\
                                                 "for Visual Studio compiler.")
         if self.info.settings.compiler.cppstd:
-            build.check_min_cppstd(self, 14)
+            build.check_min_cppstd(self, self._min_cppstd)
         minimum_version = self._compilers_minimum_version.get(str(self.info.settings.compiler), False)
         if minimum_version and scm.Version(self.info.settings.compiler.version) < minimum_version:
             raise ConanInvalidConfiguration(f"{self.ref} requires C++"\
-                f"14, which your compiler does not support.")
+                f"{self._min_cppstd}, which your compiler does not support.")
 
     def source(self):
         files.get(self,**self.conan_data["sources"][self.version], strip_root=True,
@@ -126,7 +127,7 @@ class CycloneDDSConan(ConanFile):
     def package(self):
         cmake = CMake(self)
         cmake.install()
-        self.copy("LICENSE", src=self.source_folder, dst="licenses")
+        files.copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
         files.rmdir(self, os.path.join(self.package_folder, "share"))
         files.rmdir(self, os.path.join(self.package_folder, "lib","pkgconfig"))
         files.rmdir(self, os.path.join(self.package_folder, "lib","cmake"))
