@@ -11,7 +11,7 @@ required_conan_version = ">=1.52.0"
 
 class JasperConan(ConanFile):
     name = "jasper"
-    license = "LicenseRef-LICENSE"
+    license = "JasPer-2.0"
     homepage = "https://jasper-software.github.io/jasper"
     url = "https://github.com/conan-io/conan-center-index"
     topics = ("toolkit", "coding", "jpeg", "images")
