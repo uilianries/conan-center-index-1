@@ -1,9 +1,10 @@
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
-from conan.tools.files import apply_conandata_patches, copy, get, rename, rmdir
+from conan.tools.files import export_conandata_patches, apply_conandata_patches, copy, get, rename, rmdir
+from conan.tools.microsoft import is_msvc
 import os
 
-required_conan_version = ">=1.52.0"
+required_conan_version = ">=1.53.0"
 
 class SAILConan(ConanFile):
     name = "sail"
@@ -39,8 +40,7 @@ class SAILConan(ConanFile):
     }
 
     def export_sources(self):
-        for patch_file in self.conan_data.get("patches", {}).get(self.version, []):
-            copy(self, patch_file["patch_file"], self.recipe_folder, self.export_sources_folder)
+        export_conandata_patches(self)
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -48,7 +48,7 @@ class SAILConan(ConanFile):
 
     def configure(self):
         if self.options.shared:
-            del self.options.fPIC
+            self.options.rm_safe("fPIC")
 
     def requirements(self):
         if self.options.with_avif:
@@ -56,7 +56,7 @@ class SAILConan(ConanFile):
         if self.options.with_gif:
             self.requires("giflib/5.2.1")
         if self.options.with_jpeg2000:
-            self.requires("jasper/2.0.33")
+            self.requires("jasper/3.0.6")
         if self.options.with_jpeg == "libjpeg-turbo":
             self.requires("libjpeg-turbo/2.1.4")
         elif self.options.with_jpeg == "libjpeg":
@@ -69,7 +69,7 @@ class SAILConan(ConanFile):
             self.requires("libwebp/1.2.4")
 
     def layout(self):
-        cmake_layout(self)
+        cmake_layout(self, src_folder="src")
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version],
@@ -101,6 +101,13 @@ class SAILConan(ConanFile):
         tc.variables["SAIL_ENABLE_CODECS"] = ";".join(enable_codecs)
         tc.variables["SAIL_INSTALL_PDB"] = False
         tc.variables["SAIL_THREAD_SAFE"] = self.options.thread_safe
+
+        # TODO: Remove after fixing https://github.com/conan-io/conan-center-index/issues/13159
+        # C3I workaround to force CMake to choose the highest version of
+        # the windows SDK available in the system
+        if is_msvc(self) and not self.conf.get("tools.cmake.cmaketoolchain:system_version"):
+            tc.variables["CMAKE_SYSTEM_VERSION"] = "10.0"
+
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
