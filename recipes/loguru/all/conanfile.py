@@ -122,18 +122,13 @@ class LoguruConan(ConanFile):
         self.cpp_info.defines.append(f"LOGURU_FILENAME_WIDTH={self.options.filename_width}")
         self.cpp_info.defines.append(f"LOGURU_THREADNAME_WIDTH={self.options.threadname_width}")
         self.cpp_info.defines.append(f"LOGURU_SCOPE_TIME_PRECISION={self.options.scope_time_precision}")
-        definitions = {
-            "LOGURU_CATCH_SIGABRT": self.options.catch_sigabrt,
-            "LOGURU_VERBOSE_SCOPE_ENDINGS": self.options.verbose_scope_endings,
-            "LOGURU_REDEFINE_ASSERT": self.options.redefine_assert,
-            "LOGURU_WITH_STREAMS": self.options.with_streams,
-            "LOGURU_WITH_FILEABS": self.options.with_fileabs,
-            "LOGURU_RTTI": self.options.with_rtti,
-            "LOGURU_REPLACE_GLOG": self.options.replace_glog
-        }
-        for key, value in definitions.items():
-            self.output.info(f"VALUE: {key} {value}")
-            self.cpp_info.defines.append(f"{key}={int(eval(value.value))}")
+        self.cpp_info.defines.append(f"LOGURU_CATCH_SIGABRT={int(eval(self.options.catch_sigabrt.value))}")
+        self.cpp_info.defines.append(f"LOGURU_VERBOSE_SCOPE_ENDINGS={int(eval(self.options.verbose_scope_endings.value))}")
+        self.cpp_info.defines.append(f"LOGURU_REDEFINE_ASSERT={int(eval(self.options.redefine_assert.value))}")
+        self.cpp_info.defines.append(f"LOGURU_WITH_STREAMS={int(eval(self.options.with_streams.value))}")
+        self.cpp_info.defines.append(f"LOGURU_WITH_FILEABS={int(eval(self.options.with_fileabs.value))}")
+        self.cpp_info.defines.append(f"LOGURU_RTTI={int(eval(self.options.with_rtti.value))}")
+        self.cpp_info.defines.append(f"LOGURU_REPLACE_GLOG={int(eval(self.options.replace_glog.value))}")
 
         if self.settings.os in ["Linux", "FreeBSD"]:
             self.cpp_info.system_libs = ["pthread", "dl"]
