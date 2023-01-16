@@ -114,14 +114,12 @@ class LoguruConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = ["loguru"]
-        if self.options.use_fmtlib:
-            self.cpp_info.defines.append("LOGURU_USE_FMTLIB")
-            self.cpp_info.requires = ["fmt::fmt"]
 
         self.cpp_info.defines.append(f"LOGURU_SCOPE_TEXT_SIZE={self.options.scope_text_size}")
         self.cpp_info.defines.append(f"LOGURU_FILENAME_WIDTH={self.options.filename_width}")
         self.cpp_info.defines.append(f"LOGURU_THREADNAME_WIDTH={self.options.threadname_width}")
         self.cpp_info.defines.append(f"LOGURU_SCOPE_TIME_PRECISION={self.options.scope_time_precision}")
+        self.cpp_info.defines.append(f"LOGURU_USE_FMTLIB={int(eval(self.options.use_fmtlib.value))}")
         self.cpp_info.defines.append(f"LOGURU_CATCH_SIGABRT={int(eval(self.options.catch_sigabrt.value))}")
         self.cpp_info.defines.append(f"LOGURU_VERBOSE_SCOPE_ENDINGS={int(eval(self.options.verbose_scope_endings.value))}")
         self.cpp_info.defines.append(f"LOGURU_REDEFINE_ASSERT={int(eval(self.options.redefine_assert.value))}")
