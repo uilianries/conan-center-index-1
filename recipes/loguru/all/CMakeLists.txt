@@ -3,8 +3,6 @@ project(loguru LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
 option(LOGURU_USE_FMTLIB "Use fmtlib project to format text")
 
 option(LOGURU_SCOPE_TEXT_SIZE "Maximum length of text that can be printed by a LOG_SCOPE.")
