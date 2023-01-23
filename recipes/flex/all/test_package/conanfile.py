@@ -9,7 +9,7 @@ from conan.tools.cmake import CMake, cmake_layout
 
 class TestPackageConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
-    generators = "CMakeToolchain", "VirtualBuildEnv", "VirtualRunEnv"
+    generators = "CMakeToolchain", "VirtualBuildEnv", "VirtualRunEnv", "CMakeDeps"
     test_type = "explicit"
 
     def requirements(self):
@@ -29,7 +29,7 @@ class TestPackageConan(ConanFile):
 
         output = StringIO()
         self.run("flex --version", output)
-        output_str = str(output.getvalue()) 
+        output_str = str(output.getvalue())
         self.output.info("Installed version: {}".format(output_str))
         expected_version = tested_reference_version()
         self.output.info("Expected version: {}".format(expected_version))

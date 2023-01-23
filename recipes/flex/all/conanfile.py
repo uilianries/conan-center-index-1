@@ -28,11 +28,20 @@ class FlexConan(ConanFile):
         "fPIC": True,
     }
 
+    @property
+    def _flex_macros_cmake_file(self):
+        return "conan-official-flex-macros.cmake"
+
+    @property
+    def _flex_build_module_folder(self):
+        return os.path.join(self.package_folder, "lib", "cmake", "flex")
+
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def export_sources(self):
         export_conandata_patches(self)
+        copy(self, self._flex_macros_cmake_file, src=self.recipe_folder, dst=self.export_sources_folder)
 
     def build_requirements(self):
         self.tool_requires("m4/1.4.19")
@@ -73,6 +82,7 @@ class FlexConan(ConanFile):
 
     def package(self):
         copy(self, "COPYING", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
+        copy(self, self._flex_macros_cmake_file, src=self.build_folder, dst=self._flex_build_module_folder)
         autotools = Autotools(self)
         autotools.install()
         rmdir(self, os.path.join(self.package_folder, "share"))
@@ -84,7 +94,15 @@ class FlexConan(ConanFile):
         self.cpp_info.libs = ["fl"]
         self.cpp_info.system_libs = ["m"]
 
-        self.cpp_info.set_property("cmake_find_mode", "none")
+        self.cpp_info.set_property("cmake_find_mode", "both")
+        self.cpp_info.set_property("cmake_file_name", "FLEX")
+        self.cpp_info.set_property("cmake_target_name", "FLEX::FLEX")
+        self.cpp_info.set_property("pkg_config_name", "flex")
+
+        self.cpp_info.set_property("cmake_build_modules", [os.path.join(self._flex_build_module_folder, self._flex_macros_cmake_file)])
+
+        self.cpp_info.names["cmake_find_package"] = "FLEX"
+        self.cpp_info.names["cmake_find_package_multi"] = "FLEX"
 
         bindir = os.path.join(self.package_folder, "bin")
         self.output.info("Appending PATH environment variable: {}".format(bindir))
