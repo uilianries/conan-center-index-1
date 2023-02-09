@@ -539,7 +539,7 @@ class BoostConan(ConanFile):
         if self._with_zstd:
             self.requires("zstd/1.5.2")
         if self._with_stacktrace_backtrace:
-            self.requires("libbacktrace/cci.20210118", transitive_headers=True)
+            self.requires("libbacktrace/cci.20210118", transitive_headers=True, transitive_libs=True)
 
         if self._with_icu:
             self.requires("icu/72.1")
@@ -821,6 +821,13 @@ class BoostConan(ConanFile):
             replace_in_file(self, os.path.join(self.source_folder, "libs", "stacktrace", "build", "Jamfile.v2"),
                                   "$(>) > $(<)",
                                   "echo \"\" > $(<)", strict=False)
+        if self._with_stacktrace_backtrace and self.settings.os in ["Linux", "Macos"] and not cross_building(self):
+            linker_var = "LD_LIBRARY_PATH" if self.settings.os == "Linux" else "DYLD_LIBRARY_PATH"
+            libbacktrace_libdir = self.dependencies["libbacktrace"].cpp_info.libdirs[0]
+            patched_run_rule = f"{linker_var}={libbacktrace_libdir} $(>) > $(<)"
+            replace_in_file(self, os.path.join(self.source_folder, "libs", "stacktrace", "build", "Jamfile.v2"),
+                                  "$(>) > $(<)",
+                                  patched_run_rule, strict=False)
         # Older clang releases require a thread_local variable to be initialized by a constant value
         replace_in_file(self, os.path.join(self.source_folder, "boost", "stacktrace", "detail", "libbacktrace_impls.hpp"),
                               "/* thread_local */", "thread_local", strict=False)
@@ -843,6 +850,12 @@ class BoostConan(ConanFile):
                               "    <conditional>@numa",
                               "    <link>shared:<library>.//boost_fiber : <conditional>@numa",
                               strict=False)
+        # Otherwise will not generate boost-stacktrace-backtrace library
+        if self._with_stacktrace_backtrace and self.dependencies["libbacktrace"].options.shared:
+            self.output.warning("REPLACING LIBBACKTRACE LINK")
+            replace_in_file(self, os.path.join(self.source_folder, "libs", "stacktrace", "build", "Jamfile.v2"),
+                                  ": <search>$(LIBBACKTRACE_PATH)/lib <link>static",
+                                  ": <search>$(LIBBACKTRACE_PATH)/lib <link>shared", strict=False)
 
         if self.options.header_only:
             self.output.warning("Header only package, skipping build")
@@ -1100,6 +1113,8 @@ class BoostConan(ConanFile):
             if self.conf.get("tools.apple:enable_bitcode", check_type=bool):
                 cxx_flags.append("-fembed-bitcode")
 
+        if self._with_stacktrace_backtrace:
+            flags.append(f"-sLIBBACKTRACE_PATH={self.dependencies['libbacktrace'].package_folder}")
         if self._with_iconv:
             flags.append(f"-sICONV_PATH={self.dependencies['libiconv'].package_folder}")
         if self._with_icu:
@@ -1638,6 +1653,8 @@ class BoostConan(ConanFile):
                 # https://www.boost.org/doc/libs/1_75_0/libs/system/doc/html/system.html#changes_in_boost_1_69
                 if module == "system":
                     module_libraries = []
+
+                self.output.warning(f"Module {module}: {module_libraries}")
 
                 self.cpp_info.components[module].libs = module_libraries
 
