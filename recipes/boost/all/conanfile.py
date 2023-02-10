@@ -821,9 +821,9 @@ class BoostConan(ConanFile):
             replace_in_file(self, os.path.join(self.source_folder, "libs", "stacktrace", "build", "Jamfile.v2"),
                                   "$(>) > $(<)",
                                   "echo \"\" > $(<)", strict=False)
-        if self._with_stacktrace_backtrace and self.settings.os in ["Linux", "Macos"] and not cross_building(self):
-            linker_var = "LD_LIBRARY_PATH" if self.settings.os == "Linux" else "DYLD_LIBRARY_PATH"
-            libbacktrace_libdir = self.dependencies["libbacktrace"].cpp_info.libdirs[0]
+        if self._with_stacktrace_backtrace and self.settings.os != "Windows" and not cross_building(self):
+            linker_var = "DYLD_LIBRARY_PATH" if self.settings.os == "Macos" else "LD_LIBRARY_PATH"
+            libbacktrace_libdir = self.dependencies["libbacktrace"].cpp_info.aggregated_components().libdirs[0]
             patched_run_rule = f"{linker_var}={libbacktrace_libdir} $(>) > $(<)"
             replace_in_file(self, os.path.join(self.source_folder, "libs", "stacktrace", "build", "Jamfile.v2"),
                                   "$(>) > $(<)",
