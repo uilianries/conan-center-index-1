@@ -6,4 +6,5 @@ int main() {
     printf("Version: " FASTGLTF_QUOTE(FASTGLTF_VERSION));
     printf("C++17: " FASTGLTF_QUOTE(FASTGLTF_CPP_17));
     printf("C++20: " FASTGLTF_QUOTE(FASTGLTF_CPP_20));
+    return 0;
 }

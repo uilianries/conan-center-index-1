@@ -3,6 +3,6 @@ project(test_package LANGUAGES CXX)
 
 find_package(fastgltf REQUIRED CONFIG)
 
-set(CMAKE_CXX_STANDARD 17)
 add_executable(${PROJECT_NAME} test_package.cpp)
-target_link_libraries(${PROJECT_NAME} fastgltf::fastgltf)
+target_link_libraries(${PROJECT_NAME} PRIVATE fastgltf::fastgltf)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
