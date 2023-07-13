@@ -22,4 +22,4 @@ jobs:
       - name: Build protobuf-c
         run: |
           cd recipes/protobuf-c/all
-          conan create . --version=1.4.1 -o */*:shared=True -s compiler.cppstd=14 --build=missing
+          conan create . --version=1.4.1 -o */*:shared=True -s compiler.cppstd=14 -s compiler.version=192 --build=missing
