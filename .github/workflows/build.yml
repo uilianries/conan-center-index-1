@@ -1,0 +1,22 @@
+name: Build on Windows
+on:
+  push:
+  pull_request:
+jobs:
+  cmake-msvc:
+    name: "MSVC CMake Conan"
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install conan
+        run: pip install conan
+      - name: Configure conan
+        run: conan profile detect
+      - name: Build protobuf-c
+        run: |
+          cd recipes/protobuf-c/all
+          conan create . --version=1.4.1 -o */*:shared=True --build=missing
