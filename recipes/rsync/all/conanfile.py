@@ -1,23 +1,22 @@
 from conan import ConanFile
-from conan.errors import ConanInvalidConfiguration, ConanException
-from conan.tools.gnu import Autotools, AutotoolsToolchain, AutotoolsDeps, PkgConfigDeps
-from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get, replace_in_file, rm, rmdir
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.gnu import Autotools, AutotoolsToolchain, AutotoolsDeps
+from conan.tools.files import copy, get, rmdir
 from conan.tools.layout import basic_layout
-from conan.tools.build import can_run
 from conan.tools.apple import is_apple_os
 import os
-from io import StringIO
-import re
 
-required_conan_version = ">=1.60.0"
+
+required_conan_version = ">=1.54.0"
+
 
 class RsyncConan(ConanFile):
     name = "rsync"
-    description = "Rsync utility"
-    topics = ("rsync")
+    description = "rsync is an open source utility that provides fast incremental file transfer"
+    topics = ("backup", "transferring", "file-transfer")
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://rsync.samba.org/"
-    license = "LGPL-3.0"
+    license = ("GPL-3.0", "LGPL-3.0")
     package_type = "application"
     settings = "os", "arch", "compiler", "build_type"
 
@@ -27,7 +26,7 @@ class RsyncConan(ConanFile):
         "with_zstd": [True, False],
         "with_xxhash": [True, False],
         "with_lz4": [True, False],
-        "acl": [True, False]
+        "enable_acl": [True, False]
     }
     default_options = {
         "with_zlib": True,
@@ -35,94 +34,69 @@ class RsyncConan(ConanFile):
         "with_zstd": True,
         "with_xxhash": True,
         "with_lz4": True,
-        "acl": False
-    }
-    
-    @property
-    def _configure_args(self):
-        args = [
-            "--enable-acl-support={}".format("yes" if self.options.acl else "no"),
-            "--with-included-zlib={}".format("no" if self.options.with_zlib else "yes")
-        ]
-        if not self.options.with_openssl:
-            args.append("--disable-openssl")
+        "enable_acl": False
+    }    
 
-        if not self.options.with_zstd:
-            args.append("--disable-zstd")
-
-        if not self.options.with_lz4:
-            args.append("--disable-lz4")
-
-        if not self.options.with_xxhash:
-            args.append("--disable-xxhash")
-
-        return args
-    
-    def validate(self):
-        if self.settings.os == "Windows":
-            raise ConanInvalidConfiguration(f"Windows is not supported.")        
-
-        if is_apple_os(self):
-            raise ConanInvalidConfiguration(f"Apple operating systems is not supported.")        
-
-    def export_sources(self):
-        export_conandata_patches(self)
-
+    def configure(self):
+        self.settings.rm_safe("compiler.libcxx")
+        self.settings.rm_safe("compiler.cppstd")
+        
     def layout(self):
         basic_layout(self, src_folder="src")
-
-    def source(self):
-        get(self, **self.conan_data["sources"][self.version], strip_root=True)
-
+    
+    def package_id(self):
+        del self.info.settings.compiler
+    
     def requirements(self):
         if self.options.with_openssl:
             self.requires("openssl/[>=1.1 <4]")
 
         if self.options.with_zlib:
-            self.requires("zlib/[>=1.2.12]")
+            self.requires("zlib/1.2.13")
 
         if self.options.with_zstd:
-            self.requires("zstd/[>=1.5.2]")
+            self.requires("zstd/1.5.5")
 
         if self.options.with_lz4:
             self.requires("lz4/1.9.2")
 
         if self.options.with_xxhash:
-            self.requires("xxhash/0.8.1")
+            self.requires("xxhash/0.8.2")
+    
+    def validate(self):
+        if self.settings.os == "Windows":
+            raise ConanInvalidConfiguration(f"{self.ref} is not supported on Windows.")
+        elif is_apple_os(self):
+            raise ConanInvalidConfiguration(f"{self.ref} is not supported on Apple systems.")        
+
+    def source(self):
+        get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def generate(self):
         ad = AutotoolsDeps(self)
         ad.generate()
 
+        yes_no = lambda v: "yes" if v else "no"
         tc = AutotoolsToolchain(self)
-
         if self.settings.os == "Neutrino":
             tc.extra_defines.append("MAKEDEV_TAKES_3_ARGS")
+        tc.configure_args.extend([
+            f"--enable-acl-support={yes_no(self.options.enable_acl)}",
+            f"--with-included-zlib={yes_no(not self.options.with_zlib)}",            
+            f"--with-openssl={yes_no(self.options.with_openssl)}",
+            f"--with-zstd={yes_no(self.options.with_zstd)}",
+            f"--with-lz4={yes_no(self.options.with_lz4)}",
+            f"--with-xxhash={yes_no(self.options.with_xxhash)}",
 
+            f"--enable-manpages=no",
+        ])        
         tc.generate()
-
-    def configure(self):
-        self.settings.rm_safe("compiler.libcxx")
-        self.settings.rm_safe("compiler.cppstd")
-
-    def build(self):
-        apply_conandata_patches(self)
+    
+    def build(self):        
         autotools = Autotools(self)  
-        autotools.configure(args=self._configure_args)
+        autotools.configure()
         autotools.make()
-
-        if can_run(self):
-            output = StringIO()
-            self.output.info(f"Build folder {self.build_folder}")
-            self.run(f"{self.build_folder}/rsync --version", output, env="conanrun")
-            output_str = str.strip(output.getvalue())
-
-            s = re.search(f"{self.version}", output_str)
-            if s == None:
-                raise ConanException(f"rsync command output '{output_str}' should contain version string '{self.version}'")
-            else:
-                self.output.info(f"Version verified: '{self.version}'")        
-
+        
     def package(self):
         autotools = Autotools(self)  
         autotools.install()
@@ -134,5 +108,6 @@ class RsyncConan(ConanFile):
         self.cpp_info.includedirs = []
         self.cpp_info.libdirs = []
 
+        # TODO: Remove after drooping Conan 1.x from ConanCenterIndex
         bindir = os.path.join(self.package_folder, "bin")
         self.runenv_info.prepend_path("PATH", bindir)
