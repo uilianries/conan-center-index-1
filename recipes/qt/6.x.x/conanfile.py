@@ -2,6 +2,7 @@ import configparser
 import glob
 import os
 import textwrap
+from io import StringIO
 
 from conan import ConanFile
 from conan.tools.apple import is_apple_os
@@ -152,6 +153,19 @@ class QtConan(ConanFile):
 
         return self._submodules_tree
 
+    @property
+    def _xcb_version(self):
+        cmd = ['pkg-config', '--modversion', 'xcb']
+        buff = StringIO()
+        xcb_version = Version("0.0.0")
+        try:
+            self.run(cmd, buff)
+            xcb_version = Version(buff.getvalue().strip())
+            self.output.info(f"xcb version: {xcb_version}")
+        except Exception:
+            pass
+        return xcb_version
+
     def export_sources(self):
         export_conandata_patches(self)
 
@@ -232,12 +246,8 @@ class QtConan(ConanFile):
                 setattr(self.options, module, False)
 
     def validate(self):
-        if os.getenv('NOT_ON_C3I', '0') == '0':
-            if self.info.settings.compiler == "gcc" and Version(self.info.settings.compiler.version) >= "11" or \
-                self.info.settings.compiler == "clang" and Version(self.info.settings.compiler.version) >= "12":
-                raise ConanInvalidConfiguration("qt is not supported on gcc11 and clang >= 12 on C3I until conan-io/conan-center-index#13472 is fixed\n"\
-                                                "If your distro is modern enough (xcb >= 1.12), set environment variable NOT_ON_C3I=1")
-
+        if self.options.get_safe("with_x11", False) and self._xcb_version < "1.12":
+            raise ConanInvalidConfiguration(f"{self.ref} requires xcb >= 1.12. Please, check your 'xorg/system' Conan package or disable 'qt/*:with_x11' option.")
         # C++ minimum standard required
         if self.settings.compiler.get_safe("cppstd"):
             check_min_cppstd(self, 17)
@@ -601,7 +611,7 @@ class QtConan(ConanFile):
             }
         if Version(self.version) >= "6.5.0":
             cpp_std_map[23] = "FEATURE_cxx2b"
-        
+
         for std,feature in cpp_std_map.items():
             tc.variables[feature] = "ON" if int(current_cpp_std) >= std else "OFF"
 
