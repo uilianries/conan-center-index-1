@@ -1336,6 +1336,11 @@ class BoostConan(ConanFile):
         ldflags = " ".join(self.conf.get("tools.build:sharedlinkflags", default=[], check_type=list)) + " "
         asflags = buildenv_vars.get("ASFLAGS", "") + " "
 
+        defines = " ".join(f"-D{d}" for d in self.conf.get("tools.build:defines", default=[], check_type=list)) + " "
+        if defines.strip():
+            cflags += defines
+            cxxflags += defines
+
         sysroot = self.conf.get("tools.build:sysroot")
         if sysroot and not is_msvc(self):
             sysroot = sysroot.replace("\\", "/")
