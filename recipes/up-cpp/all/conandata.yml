@@ -1,4 +1,4 @@
 sources:
-  "0.1.2":
-    url: "https://github.com/MelamudMichael/up-cpp/archive/refs/tags/0.1.2.tar.gz"
-    sha256: "ac9c80e6c809ba88fd6f85ed05eaef5d3e13c6aee9de4529b8664daeaca64209"
+  "cci.20240205":
+    url: "https://github.com/eclipse-uprotocol/up-cpp/archive/6a2fcda4bb0d5ec491155c287242a15cea811603.tar.gz"
+    sha256: "7708a2f9d356b146cdba8aae252ddf1667a9e2c37d365d0f675c7d83652c449e"

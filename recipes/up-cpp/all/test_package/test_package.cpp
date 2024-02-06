@@ -1,14 +1,17 @@
 #include <cstdlib>
-#include <up-cpp/uri/serializer/LongUriSerializer.h>
+#include <iostream>
 
+#include <up-cpp/uuid/factory/Uuidv8Factory.h>
+#include <up-cpp/uuid/serializer/UuidSerializer.h>
+
+using namespace uprotocol::uuid;
 using namespace uprotocol::v1;
-using namespace uprotocol::uri;
 
 int main(void) {
-
-    auto uri = LongUriSerializer::deserialize("/test.app/1/milliseconds");
-    auto uriStr = LongUriSerializer::serialize(timeUri);
-
-    std::cout << "serialized " << uriStr << std::endl;
+    UUID uuId = Uuidv8Factory::create();
+    std::vector<uint8_t> vectUuid = UuidSerializer::serializeToBytes(uuId);
+    UUID uuIdFromByteArr = UuidSerializer::deserializeFromBytes(vectUuid);
+    std::string uuIdStr = UuidSerializer::serializeToString(uuIdFromByteArr);
+    std::cout << "UUID: " << uuIdStr << std::endl;
     return EXIT_SUCCESS;
 }
