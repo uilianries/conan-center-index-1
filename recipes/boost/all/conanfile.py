@@ -1072,6 +1072,8 @@ class BoostConan(ConanFile):
         def add_defines(library):
             for define in self.dependencies[library].cpp_info.aggregated_components().defines:
                 flags.append(f"define={define}")
+            for define in self.conf.get("tools.build:defines", default=[], check_type=list):
+                flags.append(f"define={define.strip()}")
 
         if self._with_zlib:
             add_defines("zlib")
@@ -1335,11 +1337,6 @@ class BoostConan(ConanFile):
         cppflags = buildenv_vars.get("CPPFLAGS", "") + " "
         ldflags = " ".join(self.conf.get("tools.build:sharedlinkflags", default=[], check_type=list)) + " "
         asflags = buildenv_vars.get("ASFLAGS", "") + " "
-
-        defines = " ".join(f"-D{d}" for d in self.conf.get("tools.build:defines", default=[], check_type=list)) + " "
-        if defines.strip():
-            cflags += defines
-            cxxflags += defines
 
         sysroot = self.conf.get("tools.build:sysroot")
         if sysroot and not is_msvc(self):
