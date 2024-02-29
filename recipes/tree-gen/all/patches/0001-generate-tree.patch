@@ -1,0 +1,31 @@
+diff --git a/cmake/generate_tree.cmake b/cmake/generate_tree.cmake
+index 1a5a1f8..bad2bca 100644
+--- a/cmake/generate_tree.cmake
++++ b/cmake/generate_tree.cmake
+@@ -9,10 +9,11 @@ function(generate_tree TREE HDR SRC)
+     file(MAKE_DIRECTORY "${SRC_DIR}")
+ 
+     # Add a command to do the generation.
++    find_program(TREE_GEN_EXECUTABLE tree-gen REQUIRED)
+     add_custom_command(
+-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}"
++        COMMAND "${TREE_GEN_EXECUTABLE}" "${TREE}" "${HDR}" "${SRC}"
+         OUTPUT "${HDR}" "${SRC}"
+-        DEPENDS "${TREE}" tree-gen
++        DEPENDS "${TREE}" "${TREE_GEN_EXECUTABLE}"
+     )
+ endfunction()
+ 
+@@ -31,9 +32,10 @@ function(generate_tree_py TREE HDR SRC PY)
+     file(MAKE_DIRECTORY "${PY_DIR}")
+ 
+     # Add a command to do the generation.
++    find_program(TREE_GEN_EXECUTABLE tree-gen REQUIRED)
+     add_custom_command(
+-        COMMAND tree-gen "${TREE}" "${HDR}" "${SRC}" "${PY}"
++        COMMAND "${TREE_GEN_EXECUTABLE}" "${TREE}" "${HDR}" "${SRC}" "${PY}"
+         OUTPUT "${HDR}" "${SRC}" "${PY}"
+-        DEPENDS "${TREE}" tree-gen
++        DEPENDS "${TREE}" "${TREE_GEN_EXECUTABLE}"
+     )
+ endfunction()

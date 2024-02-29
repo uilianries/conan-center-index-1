@@ -1,5 +1,9 @@
 sources:
-  # Newer versions at the top
   "1.0.1":
     url: "https://github.com/QuTech-Delft/tree-gen/archive/refs/tags/1.0.1.tar.gz"
     sha256: "82484962603caa3f769d05c508357cda75699af7b25f794f02a9375cd1787dad"
+patches:
+  "1.0.1":
+    - patch_file: "patches/0001-generate-tree.patch"
+      patch_type: "bugfix"
+      patch_description: "Find tree-gen program and avoid cmake target name conflict"
