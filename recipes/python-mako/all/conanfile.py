@@ -1,8 +1,7 @@
 import os
-import pip
 
 from conan import ConanFile
-from conan.tools.files import copy, get, rmdir, save
+from conan.tools.files import copy, get, save
 from conan.tools.layout import basic_layout
 
 required_conan_version = ">=1.52.0"
@@ -30,10 +29,9 @@ class PythonMakoConan(ConanFile):
 
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
-        pip.main(['install', '--no-deps', '--ignore-installed', '--target', self.package_folder, self.source_folder])
-        save(self, os.path.join(self.package_folder, "__init__.py"), "")
-        rmdir(self, os.path.join(self.package_folder, f"Mako-{self.version}.dev0.dist-info"))
+        copy(self, "*", src=os.path.join(self.source_folder, "mako"), dst=os.path.join(self.package_folder, "lib", "mako"))
+        save(self, os.path.join(self.package_folder, "lib", "__init__.py"), "")
 
     def package_info(self):
         self.cpp_info.includedirs = []
-        self.buildenv_info.define_path("PYTHONPATH", self.package_folder)
+        self.buildenv_info.define_path("PYTHONPATH", os.path.join(self.package_folder, "lib"))
