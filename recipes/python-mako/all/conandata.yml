@@ -1,0 +1,4 @@
+sources:
+  "1.3.2":
+    url: "https://github.com/sqlalchemy/mako/archive/refs/tags/rel_1_3_2.tar.gz"
+    sha256: "0695c72d88413d0b743fbb19cbc60aa37f7bba040f67132968b60592b3b7cd34"
