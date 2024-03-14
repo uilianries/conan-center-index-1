@@ -1,13 +1,16 @@
 from conan import ConanFile
 from conan.tools.apple import fix_apple_shared_install_name, is_apple_os
-from conan.tools.env import VirtualBuildEnv
+from conan.tools.env import VirtualBuildEnv, Environment
 from conan.tools.files import apply_conandata_patches, copy, export_conandata_patches, get, replace_in_file, rm, rmdir
 from conan.tools.gnu import PkgConfigDeps
 from conan.tools.layout import basic_layout
 from conan.tools.meson import Meson, MesonToolchain
 from conan.tools.microsoft import is_msvc
+from conan.tools.scm import Version
+import sys
 import os
 import shutil
+import configparser
 
 
 required_conan_version = ">=1.53.0"
@@ -80,6 +83,12 @@ class GLibConan(ConanFile):
         if is_apple_os(self):
             self.requires("libiconv/1.17")
 
+    def validate(self):
+        if Version(self.version) >= "2.79":
+            if sys.version_info < (3,8,0):
+                # INFO: Actually work with Python 3.7 when building and using glib
+                self.output.error(f"{self.ref} requires Python >=3.8 due to usage of python-packaging")
+
     def build_requirements(self):
         self.tool_requires("meson/1.2.2")
         if not self.conf.get("tools.gnu:pkg_config", check_type=str):
@@ -89,12 +98,19 @@ class GLibConan(ConanFile):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
 
     def generate(self):
+        env = Environment()
+        env.define("PYTHONPATH", self._pythonpath)
+        # meson.import(python) will use the python from the venv instead
+        env.prepend_path("PATH", self._vevn_python_exec_folder)
+        envvars = env.vars(self)
+        envvars.save_script("conan_pythonpath")
+
         virtual_build_env = VirtualBuildEnv(self)
         virtual_build_env.generate()
+
         tc = PkgConfigDeps(self)
         tc.generate()
         tc = MesonToolchain(self)
-
         tc.project_options["selinux"] = "enabled" if self.options.get_safe("with_selinux") else "disabled"
         tc.project_options["libmount"] = "enabled" if self.options.get_safe("with_mount") else "disabled"
         if self.settings.os == "FreeBSD":
@@ -130,7 +146,46 @@ class GLibConan(ConanFile):
             "'res'",
         )
 
+    @property
+    def _venv_folder(self):
+        return os.path.join(self.build_folder, "installer-venv")
+
+    @property
+    def _venv_python_version(self):
+        config_file = os.path.join(self.package_folder, "lib", "venv", "pyvenv.cfg")
+        parser = configparser.ConfigParser()
+        with open(config_file) as stream:
+            parser.read_string("[DEFAULT]\n" + stream.read())
+        version = parser.get('DEFAULT', 'version', fallback=None)
+        return Version(version)
+
+    @property
+    def _pythonpath(self):
+        return os.path.join(self._venv_folder, "lib", f"python{sys.version_info[0]}.{sys.version_info[1]}", "site-packages")
+
+    @property
+    def _packaged_pythonpath(self):
+        python_version = self._venv_python_version
+        return os.path.join(self.package_folder, "lib", "venv", "lib", f"python{python_version.major}.{python_version.minor}", "site-packages")
+
+    @property
+    def _venv_python(self, script_subfolder=""):
+        script_subfolder = "" if self.settings.os == "Windows" else "bin"
+        python_suffix = ".exe" if self.settings.os == "Windows" else "3"
+        return os.path.join(self._venv_folder, script_subfolder, f"python{python_suffix}")
+
+    @property
+    def _vevn_python_exec_folder(self):
+        script_subfolder = "Scripts" if self.settings.os == "Windows" else "bin"
+        return os.path.join(self._venv_folder, script_subfolder)
+
+    def _install_python_requirements(self):
+        self.run(f"{sys.executable} -m venv {self._venv_folder}")
+        self.run(f"{self._venv_python} -m pip install pip --upgrade")
+        self.run(f"{self._venv_python} -m pip install packaging")
+
     def build(self):
+        self._install_python_requirements()
         self._patch_sources()
         meson = Meson(self)
         meson.configure()
@@ -149,6 +204,9 @@ class GLibConan(ConanFile):
         rm(self, "*.pdb", os.path.join(self.package_folder, "bin"))
         fix_apple_shared_install_name(self)
         fix_msvc_libname(self)
+
+        # INFO: venv is not relocatable, but we only want to use python-packaging from the venv
+        copy(self, "*", src=self._venv_folder, dst=os.path.join(self.package_folder, "lib", "venv"))
 
     def package_info(self):
         self.cpp_info.components["glib-2.0"].set_property("pkg_config_name", "glib-2.0")
@@ -263,6 +321,10 @@ class GLibConan(ConanFile):
         self.cpp_info.components["glib-2.0"].set_property(
             "pkg_config_custom_content",
             "\n".join(f"{key}={value}" for key, value in pkgconfig_variables.items()))
+
+        # INFO: Once packaged, we can not use customer python as referece, but venv only
+        self.runenv_info.append_path("PYTHONPATH", self._packaged_pythonpath)
+        self.buildenv_info.append_path("PYTHONPATH", self._packaged_pythonpath)
 
 def fix_msvc_libname(conanfile, remove_lib_prefix=True):
     """remove lib prefix & change extension to .lib in case of cl like compiler"""
