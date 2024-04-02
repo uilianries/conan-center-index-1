@@ -97,6 +97,10 @@ class OpenALSoftConan(ConanFile):
         tc.variables["ALSOFT_UTILS"] = False
         tc.variables["ALSOFT_EXAMPLES"] = False
         tc.variables["ALSOFT_TESTS"] = False
+        tc.variables["ALSOFT_INSTALL_CONFIG"] = False
+        tc.variables["ALSOFT_INSTALL_EXAMPLES"] = False
+        tc.variables["ALSOFT_INSTALL_AMBDEC_PRESETS"] = False
+        tc.variables["ALSOFT_INSTALL_HRTF_DATA"] = False
         tc.variables["CMAKE_DISABLE_FIND_PACKAGE_SoundIO"] = True
         tc.generate()
 
