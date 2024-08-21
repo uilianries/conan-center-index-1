@@ -17,7 +17,7 @@ class GobjectIntrospectionConan(ConanFile):
     name = "gobject-introspection"
     description = ("GObject introspection is a middleware layer between "
                    "C libraries (using GObject) and language bindings")
-    license = "LGPL-2.1"
+    license = "LGPL-2.1-or-later"
     url = "https://github.com/conan-io/conan-center-index"
     homepage = "https://gitlab.gnome.org/GNOME/gobject-introspection"
     topics = ("gobject-instrospection",)
@@ -57,6 +57,8 @@ class GobjectIntrospectionConan(ConanFile):
 
     def build_requirements(self):
         self.tool_requires("meson/[>=1.2.3 <2]")
+        # INFO: Python 3.12 requires setuptools
+        self.tool_requires("cpython/3.8.19")
         if not self.conf.get("tools.gnu:pkg_config", default=False, check_type=str):
             self.tool_requires("pkgconf/[>=2.2 <3]")
         if self.settings.os == "Windows":
@@ -77,7 +79,7 @@ class GobjectIntrospectionConan(ConanFile):
             env.generate(scope="build")
         tc = MesonToolchain(self)
         tc.args = ["--wrap-mode=nofallback"]
-        tc.project_options["build_introspection_data"] = self.dependencies["glib"].options.shared
+        tc.project_options["build_introspection_data"] = bool(self.dependencies["glib"].options.shared)
         tc.project_options["datadir"] = os.path.join(self.package_folder, "res")
         tc.generate()
         deps = PkgConfigDeps(self)
