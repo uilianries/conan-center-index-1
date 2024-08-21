@@ -4,7 +4,7 @@ from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import cross_building
 from conan.tools.env import VirtualBuildEnv, VirtualRunEnv
-from conan.tools.files import copy, get, replace_in_file, rm, rmdir
+from conan.tools.files import copy, get, replace_in_file, rm, rmdir, export_conandata_patches, apply_conandata_patches
 from conan.tools.gnu import PkgConfigDeps
 from conan.tools.layout import basic_layout
 from conan.tools.meson import MesonToolchain, Meson
@@ -31,6 +31,9 @@ class GobjectIntrospectionConan(ConanFile):
         "fPIC": True,
     }
 
+    def export_sources(self):
+        export_conandata_patches(self)
+
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
@@ -46,19 +49,13 @@ class GobjectIntrospectionConan(ConanFile):
         # https://gitlab.gnome.org/GNOME/gobject-introspection/-/blob/1.76.1/meson.build?ref_type=tags#L127-131
         glib_minor = Version(self.version).minor
         self.requires(f"glib/[>=2.{glib_minor}]", transitive_headers=True, transitive_libs=True)
-        # FIXME: gobject-introspection links against system python3 libs, which is not reliable
-
-    def validate(self):
-        if self.settings.os == "Windows" and self.settings.build_type == "Debug":
-            # fatal error LNK1104: cannot open file 'python37_d.lib'
-            raise ConanInvalidConfiguration(
-                "Debug build on Windows is disabled due to debug version of Python libs likely not being available."
-            )
+        # INFO: Python 3.12 requires setuptools:
+        # https://gitlab.gnome.org/GNOME/gobject-introspection/-/releases#changes-since-1791
+        self.requires("cpython/3.8.19")
 
     def build_requirements(self):
         self.tool_requires("meson/[>=1.2.3 <2]")
-        # INFO: Python 3.12 requires setuptools
-        self.tool_requires("cpython/3.8.19")
+        self.tool_requires("cpython/<host_version>")
         if not self.conf.get("tools.gnu:pkg_config", default=False, check_type=str):
             self.tool_requires("pkgconf/[>=2.2 <3]")
         if self.settings.os == "Windows":
@@ -86,6 +83,7 @@ class GobjectIntrospectionConan(ConanFile):
         deps.generate()
 
     def _patch_sources(self):
+        apply_conandata_patches(self)
         replace_in_file(self, os.path.join(self.source_folder, "meson.build"),
                         "subdir('tests')",
                         "#subdir('tests')")
@@ -97,7 +95,6 @@ class GobjectIntrospectionConan(ConanFile):
 
     def build(self):
         self._patch_sources()
-        os.environ["PKG_CONFIG_PATH"] = os.path.join(self.build_folder, "conan")
         meson = Meson(self)
         meson.configure()
         meson.build()

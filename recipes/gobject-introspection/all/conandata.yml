@@ -5,3 +5,12 @@ sources:
   "1.72.0":
     url: "https://download.gnome.org/sources/gobject-introspection/1.72/gobject-introspection-1.72.0.tar.xz"
     sha256: "02fe8e590861d88f83060dd39cda5ccaa60b2da1d21d0f95499301b186beaabc"
+patches:
+  "1.80.1":
+    - patch_file: "patches/1.80.1-0001-data-dir-path.patch"
+      patch_description: "Avoid using absolute path in g-ir-xxx scripts"
+      patch_type: "bugfix"
+  "1.72.0":
+    - patch_file: "patches/1.72.0-0001-data-dir-path.patch"
+      patch_description: "Avoid using absolute path in g-ir-xxx scripts"
+      patch_type: "bugfix"
