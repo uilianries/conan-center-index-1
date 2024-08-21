@@ -1,6 +1,7 @@
+#include <stdlib.h>
 #include "girepository.h"
 
-int main() {
+int main(void) {
   GIRepository *repository;
   GError *error = NULL;
   GIBaseInfo *base_info;
@@ -31,4 +32,5 @@ int main() {
   }
 
   g_base_info_unref(base_info);
+  return EXIT_SUCCESS;
 }
