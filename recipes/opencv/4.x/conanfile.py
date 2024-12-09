@@ -433,6 +433,12 @@ class OpenCVConan(ConanFile):
         def xkbcommon():
             return ["xkbcommon::libxkbcommon"] if self.options.get_safe("with_wayland") else []
 
+        def cuda():
+            return ["cuda-toolkit::cuda-toolkit"] if self.options.get_safe("with_cuda") else []
+
+        def cudnn():
+            return ["cudnn::cudnn"] if self.options.get_safe("with_cudnn") else []
+
         def opencv_calib3d():
             return ["opencv_calib3d"] if self.options.calib3d else []
 
@@ -507,7 +513,7 @@ class OpenCVConan(ConanFile):
             "dnn": {
                 "is_built": self.options.dnn,
                 "mandatory_options": ["imgproc"],
-                "requires": ["opencv_core", "opencv_imgproc"] + protobuf() + vulkan() + ipp(),
+                "requires": ["opencv_core", "opencv_imgproc"] + protobuf() + vulkan() + ipp() + cudnn(),
             },
             "features2d": {
                 "is_built": self.options.features2d,
@@ -624,64 +630,64 @@ class OpenCVConan(ConanFile):
             "cudaarithm": {
                 "is_built": self.options.cudaarithm,
                 "mandatory_options": ["with_cuda"],
-                "requires": ["opencv_core", "opencv_cudev"] + ipp(),
+                "requires": ["opencv_core", "opencv_cudev"] + ipp() + cuda(),
             },
             "cudabgsegm": {
                 "is_built": self.options.cudabgsegm,
                 "mandatory_options": ["with_cuda", "video"],
-                "requires": ["opencv_video"] + ipp(),
+                "requires": ["opencv_video"] + ipp() + cuda(),
             },
             "cudacodec": {
                 "is_built": self.options.cudacodec,
                 "mandatory_options": ["with_cuda", "videoio"],
-                "requires": ["opencv_core", "opencv_videoio"] + ipp(),
+                "requires": ["opencv_core", "opencv_videoio"] + ipp() + cuda(),
             },
             "cudafeatures2d": {
                 "is_built": self.options.cudafeatures2d,
                 "mandatory_options": ["with_cuda", "features2d", "cudafilters", "cudawarping"],
-                "requires": ["opencv_features2d", "opencv_cudafilters", "opencv_cudawarping"] + ipp(),
+                "requires": ["opencv_features2d", "opencv_cudafilters", "opencv_cudawarping"] + ipp() + cuda(),
             },
             "cudafilters": {
                 "is_built": self.options.cudafilters,
                 "mandatory_options": ["with_cuda", "imgproc", "cudaarithm"],
-                "requires": ["opencv_imgproc", "opencv_cudaarithm"] + ipp(),
+                "requires": ["opencv_imgproc", "opencv_cudaarithm"] + ipp() + cuda(),
             },
             "cudaimgproc": {
                 "is_built": self.options.cudaimgproc,
                 "mandatory_options": ["with_cuda", "imgproc"],
-                "requires": ["opencv_imgproc", "opencv_cudev"] + opencv_cudaarithm() + opencv_cudafilters() + ipp(),
+                "requires": ["opencv_imgproc", "opencv_cudev"] + opencv_cudaarithm() + opencv_cudafilters() + ipp() + cuda(),
             },
             "cudalegacy": {
                 "is_built": self.options.cudalegacy,
                 "mandatory_options": ["with_cuda", "video"],
                 "requires": ["opencv_core", "opencv_video"] + opencv_calib3d() + opencv_imgproc() + opencv_objdetect() +
-                            opencv_cudaarithm() + opencv_cudafilters() + opencv_cudaimgproc() + ipp(),
+                            opencv_cudaarithm() + opencv_cudafilters() + opencv_cudaimgproc() + ipp() + cuda(),
             },
             "cudaobjdetect": {
                 "is_built": self.options.cudaobjdetect,
                 "mandatory_options": ["with_cuda", "objdetect", "cudaarithm", "cudawarping"],
-                "requires": ["opencv_objdetect", "opencv_cudaarithm", "opencv_cudawarping"] + opencv_cudalegacy() + ipp(),
+                "requires": ["opencv_objdetect", "opencv_cudaarithm", "opencv_cudawarping"] + opencv_cudalegacy() + ipp() + cuda(),
             },
             "cudaoptflow": {
                 "is_built": self.options.cudaoptflow,
-                "mandatory_options": ["with_cuda", "video", "cudaarithm", "cudaimgproc", "cudawarping", "optflow"],
+                "mandatory_options": ["with_cuda", "video", "cudaarithm", "opencv_cudaimgproc", "cudawarping", "optflow"],
                 "requires": ["opencv_video", "opencv_cudaarithm", "cudaimgproc", "opencv_cudawarping",
-                             "opencv_optflow"] + opencv_cudalegacy() + ipp(),
+                             "opencv_optflow"] + opencv_cudalegacy() + ipp() + cuda(),
             },
             "cudastereo": {
                 "is_built": self.options.cudastereo,
                 "mandatory_options": ["with_cuda", "calib3d"],
-                "requires": ["opencv_calib3d", "opencv_cudev"] + ipp(),
+                "requires": ["opencv_calib3d", "opencv_cudev"] + ipp() + cuda(),
             },
             "cudawarping": {
                 "is_built": self.options.cudawarping,
                 "mandatory_options": ["with_cuda", "imgproc"],
-                "requires": ["opencv_core", "opencv_imgproc", "opencv_cudev"] + ipp(),
+                "requires": ["opencv_core", "opencv_imgproc", "opencv_cudev"] + ipp() + cuda(),
             },
             "cudev": {
                 "is_built": self.options.with_cuda,
                 "no_option": True,
-                "requires": ipp(),
+                "requires": ipp() + cuda(),
             },
             "cvv": {
                 "is_built": self.options.cvv,
@@ -1166,6 +1172,11 @@ class OpenCVConan(ConanFile):
         if self.options.get_safe("with_tesseract"):
             self.requires("tesseract/5.3.3")
 
+        if self.options.get_safe("with_cuda"):
+            self.requires("cuda-toolkit/[>=11.0 <13.0]")
+        if self.options.get_safe("with_cudnn"):
+            self.requires("cudnn/9.6.0")
+
     def package_id(self):
         # deprecated options
         del self.info.options.contrib
@@ -1229,6 +1240,8 @@ class OpenCVConan(ConanFile):
                 self.tool_requires("wayland/<host_version>")
             if not self.conf.get("tools.gnu:pkg_config", check_type=str):
                 self.tool_requires("pkgconf/2.1.0")
+        if self.options.get_safe("with_cuda"):
+            self.tool_requires("cuda-toolkit/<host_version>")
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version][0], strip_root=True)
