@@ -513,7 +513,7 @@ class OpenCVConan(ConanFile):
             "dnn": {
                 "is_built": self.options.dnn,
                 "mandatory_options": ["imgproc"],
-                "requires": ["opencv_core", "opencv_imgproc"] + protobuf() + vulkan() + ipp() + cudnn(),
+                "requires": ["opencv_core", "opencv_imgproc"] + protobuf() + vulkan() + ipp() + cudnn() + ["cuda-toolkit::cuda-toolkit"],
             },
             "features2d": {
                 "is_built": self.options.features2d,
