@@ -32,8 +32,6 @@ class TestPackageConan(ConanFile):
         self.requires(self.tested_reference_str)
 
     def generate(self):
-        self.output.info(f"OPTIONS: {self.dependencies["opencv"].options}")
-
         tc = CMakeToolchain(self)
         for module in self._tested_modules:
             cmake_option = f"OPENCV_WITH_{module.upper()}"
@@ -47,6 +45,7 @@ class TestPackageConan(ConanFile):
                 tc.variables[cmake_option] = self.dependencies["opencv"].options.with_cuda
             else:
                 tc.variables[cmake_option] = self.dependencies["opencv"].options.get_safe(module, False)
+        tc.variables["OPENCV_BUILD_SHARED_LIBS"] = self.dependencies[self.tested_reference_str].options.shared
         tc.generate()
 
     def build(self):

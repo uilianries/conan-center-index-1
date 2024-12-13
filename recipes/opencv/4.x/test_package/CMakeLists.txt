@@ -4,6 +4,7 @@ project(test_package LANGUAGES CXX)
 enable_testing()
 
 find_package(OpenCV REQUIRED core CONFIG)
+find_package(CUDAToolkit REQUIRED)
 
 set(TESTED_MODULES
     # Main modules
@@ -31,6 +32,11 @@ foreach(_module ${TESTED_MODULES})
             target_link_libraries(${_test_target} PRIVATE opencv_core)
         else()
             target_link_libraries(${_test_target} PRIVATE ${_module_target})
+        endif()
+        if (MSVC AND NOT OPENCV_BUILD_SHARED_LIBS AND OPENCV_WITH_CUDA)
+            # INFO: The cuda-toolkit package does not model its package_info, intead, we consume the official FindCUDAToolkit
+            # When building with MSVC and static OpenCV, we need to link against the CUDA libraries manually
+            target_link_libraries(${_test_target} PRIVATE CUDA::cuda_driver CUDA::cublas CUDA::cudart CUDA::cufft CUDA::curand CUDA::cusolver CUDA::cusparse CUDA::nppial CUDA::nppicc CUDA::nppist CUDA::nppidei CUDA::nppig CUDA::nppif CUDA::nppim)
         endif()
         if(NOT ${_module} STREQUAL "highgui")
             add_test(NAME ${_test_target} COMMAND ${_test_target})
