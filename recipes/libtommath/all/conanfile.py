@@ -24,6 +24,7 @@ class LibTomMathConan(ConanFile):
         "shared": False,
         "fPIC": True,
     }
+    package_type = "library"
 
     exports_sources = "patches/*"
 
@@ -37,10 +38,6 @@ class LibTomMathConan(ConanFile):
         if self.options.shared:
             return "makefile.shared"
         return "makefile.unix"
-
-    @property
-    def _debug_args(self):
-        return "COMPILE_DEBUG=1" if self.settings.build_type == "Debug" else ""
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -74,7 +71,7 @@ class LibTomMathConan(ConanFile):
             pass
         else:
             autotools = Autotools(self)
-            autotools.make(target=None, args=["-f", self._makefile, self._debug_args])
+            autotools.make(target=None, args=["-f", self._makefile])
 
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
@@ -85,7 +82,7 @@ class LibTomMathConan(ConanFile):
             copy(self, "tommath.h", src=self._source_subfolder, dst=os.path.join(self.package_folder, "include"))
         else:
             autotools = Autotools(self)
-            autotools.make(target="install", args=["-f", self._makefile, self._debug_args, f"PREFIX={self.package_folder}"])
+            autotools.make(target="install", args=["-f", self._makefile, f"PREFIX={self.package_folder}"])
 
         rm(self, "*.la", os.path.join(self.package_folder, "lib"))
         rmdir(self, os.path.join(self.package_folder, "lib", "pkgconfig"))
