@@ -1,8 +1,8 @@
 from conan import ConanFile
-
-from conan.tools.microsoft import is_msvc, NMakeToolchain
+from conan.tools.microsoft import is_msvc, NMakeToolchain, msvc_runtime_flag
 from conan.tools.gnu import AutotoolsToolchain, Autotools
-from conan.tools.files import copy, rm, rmdir, get
+from conan.tools.files import copy, rm, rmdir, get, chdir
+from conan.errors import ConanInvalidConfiguration
 import os
 
 required_conan_version = ">=2.0.9"
@@ -26,8 +26,6 @@ class LibTomMathConan(ConanFile):
     }
     package_type = "library"
 
-    exports_sources = "patches/*"
-
 
     @property
     def _makefile(self):
@@ -39,15 +37,25 @@ class LibTomMathConan(ConanFile):
             return "makefile.shared"
         return "makefile.unix"
 
+    @property
+    def _optimization_flags(self):
+        # libtommath requires optimization on MSVC Debug builds for dead code elimination.
+        # Otherwise, the build will fail with error LNK2019: unresolved external symbol s_read_arc4random
+        # By default, it uses /Ox: https://github.com/libtom/libtommath/blob/v1.3.0/makefile.msvc#L14
+        # https://github.com/libtom/libtommath/blob/42b3fb07e7d504f61a04c7fca12e996d76a25251/s_mp_rand_platform.c#L120-L138
+        # https://github.com/libtom/libtommath/issues/485
+        return "/Ox" if is_msvc(self) and self.settings.build_type == "Debug" else ""
+
     def config_options(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
 
     def configure(self):
         if self.options.shared:
-            del self.options.fPIC
-        del self.settings.compiler.libcxx
-        del self.settings.compiler.cppstd
+            self.options.rm_safe("fPIC")
+
+        self.settings.rm_safe("compiler.libcxx")
+        self.settings.rm_safe("compiler.cppstd")
 
     def build_requirements(self):
         if not is_msvc(self) and self.settings_build.os == "Windows" and not self.conf.get("tools.gnu:make_program"):
@@ -55,6 +63,14 @@ class LibTomMathConan(ConanFile):
 
         if self.settings.os != "Windows" and self.options.shared:
             self.build_requires("libtool/2.4.6")
+
+    def validate(self):
+        if is_msvc(self) and self.options.shared:
+            # INFO: Official release does not support shared library on Windows with MSVC yet
+            # However, the develop branch has it supported already:
+            # https://github.com/libtom/libtommath/blob/5809141a3a6ec1bf3443c927c02b955e19224016/makefile.msvc#L24
+            # TODO: Update msvc+shared support when the next release of libtommath is available
+            raise ConanInvalidConfiguration("Does not support shared library on Windows with MSVC for now.")
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
@@ -67,26 +83,31 @@ class LibTomMathConan(ConanFile):
 
     def build(self):
         if is_msvc(self):
-            # TODO: implement MSVC build
-            pass
+            runtime_flag = "/" + msvc_runtime_flag(self)
+            with chdir(self, self.source_folder):
+                self.run(f'nmake -f {self._makefile} all CFLAGS="{self._optimization_flags} {runtime_flag}"')
         else:
+            make_target = "libtommath.dll" if self.options.shared and self.settings.os == "Windows" else "all"
+            debug_flags = "COMPILE_DEBUG=1" if self.settings.build_type == "Debug" else ""
             autotools = Autotools(self)
-            autotools.make(target=None, args=["-f", self._makefile])
+            autotools.make(target=make_target, args=["-f", self._makefile, debug_flags])
 
     def package(self):
         copy(self, "LICENSE", src=self.source_folder, dst=os.path.join(self.package_folder, "licenses"))
-        if self.settings.os == "Windows":
-            copy(self, "*.a", src=self.source_folder, dst=os.path.join(self.package_folder, "lib"))
-            copy(self, "*.lib", src=self._source_subfolder, dst=os.path.join(self.package_folder, "lib"))
-            copy(self, "*.dll", src=self._source_subfolder, dst=os.path.join(self.package_folder, "bin"))
-            copy(self, "tommath.h", src=self._source_subfolder, dst=os.path.join(self.package_folder, "include"))
+        if is_msvc(self):
+            with chdir(self, self.source_folder):
+                self.run(f"nmake -f {self._makefile} install PREFIX={self.package_folder}")
+        elif self.settings.os == "Windows":
+            copy(self, "tommath.h", src=self.source_folder, dst=os.path.join(self.package_folder, "include"))
+            copy(self, "*.dll", src=self.build_folder, dst=os.path.join(self.package_folder, "bin"))
+            copy(self, "*.a", src=self.build_folder, dst=os.path.join(self.package_folder, "lib"))
         else:
             autotools = Autotools(self)
             autotools.make(target="install", args=["-f", self._makefile, f"PREFIX={self.package_folder}"])
 
         rm(self, "*.la", os.path.join(self.package_folder, "lib"))
         rmdir(self, os.path.join(self.package_folder, "lib", "pkgconfig"))
-        if self.options.shared:
+        if not self.settings.os == "Windows" and self.options.shared:
             rm(self, "*.a", os.path.join(self.package_folder, "lib"))
 
     def package_info(self):
